@@ -17,14 +17,14 @@ RSpec.describe Readyset::Command do
     context "when always is set to true" do
       it "executes the correct SQL command" do
         described_class.create_cache("test_cache", "SELECT * FROM test", always: true)
-        expect(connection_double).to have_received(:execute).with("CREATE CACHE ALWAYS [test_cache] FROM SELECT * FROM test;")
+        expect(connection_double).to have_received(:execute).with("CREATE CACHE ALWAYS test_cache FROM SELECT * FROM test;")
       end
     end
 
     context "when always is not set" do
       it "executes the correct SQL command" do
         described_class.create_cache("test_cache", "SELECT * FROM test")
-        expect(connection_double).to have_received(:execute).with("CREATE CACHE [test_cache] FROM SELECT * FROM test;")
+        expect(connection_double).to have_received(:execute).with("CREATE CACHE test_cache FROM SELECT * FROM test;")
       end
     end
   end

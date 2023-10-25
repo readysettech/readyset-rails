@@ -2,7 +2,7 @@
 
 module Readyset
   class Command
-    def self.create_cache(name, query, always: true)
+    def self.create_cache(name, query, always: false)
       cache_command = always ? "CREATE CACHE ALWAYS #{name} FROM #{query};" : "CREATE CACHE #{name} FROM #{query};"
       Connection.establish.execute(cache_command)
     end
