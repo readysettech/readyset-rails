@@ -3,6 +3,7 @@
 require "readyset/configuration"
 require "readyset/connection"
 require "readyset/command"
+require "readyset/default_resolver"
 
 module Readyset
   class << self
@@ -15,5 +16,9 @@ module Readyset
 
   def self.configure
     yield(configuration)
+  end
+
+  def self.current_config
+    configuration.inspect
   end
 end

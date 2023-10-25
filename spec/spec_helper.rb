@@ -1,6 +1,9 @@
 # frozen_string_literal: true
 
-require "readyset/rails"
+require "bundler/setup"
+Bundler.setup
+
+require "readyset"
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
