@@ -5,6 +5,8 @@ require "readyset/connection"
 require "readyset/command"
 require "readyset/default_resolver"
 
+require "railtie" if defined?(Rails)
+
 module Readyset
   class << self
     attr_writer :configuration
