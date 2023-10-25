@@ -1,4 +1,4 @@
-# lib/railtie.rb
+# lib/readyset/railtie.rb
 
 require "rails"
 

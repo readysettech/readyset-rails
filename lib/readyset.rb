@@ -5,7 +5,7 @@ require "readyset/connection"
 require "readyset/command"
 require "readyset/default_resolver"
 
-require "railtie" if defined?(Rails)
+require "readyset/railtie" if defined?(Rails::Railtie)
 
 module Readyset
   class << self
