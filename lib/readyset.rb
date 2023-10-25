@@ -4,6 +4,7 @@ require "readyset/configuration"
 require "readyset/connection"
 require "readyset/command"
 require "readyset/default_resolver"
+require "readyset/middleware"
 
 require "readyset/railtie" if defined?(Rails::Railtie)
 

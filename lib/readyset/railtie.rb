@@ -1,7 +1,5 @@
 # lib/readyset/railtie.rb
 
-require "rails"
-
 module Readyset
   class Railtie < Rails::Railtie
     initializer "readyset.configure_rails_initialization" do |app|
