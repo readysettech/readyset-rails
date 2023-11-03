@@ -5,11 +5,12 @@ require_relative 'lib/readyset/version'
 Gem::Specification.new do |spec|
   spec.name = 'readyset'
   spec.version = Readyset::VERSION
-  spec.authors = ['Paul Lemus']
-  spec.email = ['paullemus@protonmail.com']
+  spec.authors = ['ReadySet Technology, Inc.']
+  spec.email = ['info@readyset.io']
 
-  spec.summary = 'An adapter for ReadySet.'
-  spec.description = 'WIP.'
+  spec.summary = 'A Rails adapter for ReadySet, a partially-stateful, incrementally-maintained ' \
+                 'SQL cache.'
+  spec.description = 'This gem provides a Rails adapter to the ReadySet SQL cache.'
   spec.homepage = 'https://readyset.io'
   spec.required_ruby_version = '>= 2.7.0'
 
@@ -23,7 +24,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir.chdir(__dir__) do
     `git ls-files -z`.split("\x0").reject do |f|
       (File.expand_path(f) == __FILE__) ||
-        f.start_with?(*%w(bin/ test/ spec/ features/ .git .circleci appveyor))
+        f.start_with?(*%w(bin/ test/ spec/ features/ .git .github))
     end
   end
   spec.bindir = 'exe'
