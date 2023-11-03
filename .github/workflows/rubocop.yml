@@ -3,7 +3,7 @@ name: Ruby
 on: [push, pull_request]
 
 jobs:
-  test:
+  rubocop:
 
     runs-on: ubuntu-latest
     strategy:
