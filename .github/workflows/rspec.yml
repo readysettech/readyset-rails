@@ -3,7 +3,7 @@ name: Ruby
 on: [push, pull_request]
 
 jobs:
-  test:
+  rspec:
 
     runs-on: ubuntu-latest
     strategy:
