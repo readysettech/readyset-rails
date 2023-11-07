@@ -1,6 +1,6 @@
 # lib/readyset/connection.rb
 
-require "active_record"
+require 'active_record'
 
 module Readyset
   class Connection
@@ -13,10 +13,12 @@ module Readyset
     end
 
     def self.check_database_status
-      status_response = ActiveRecord::Base.connection.execute("SHOW READYSET STATUS;").first
-      status = status_response && status_response["value"]
+      status_response = ActiveRecord::Base.connection.execute('SHOW READYSET STATUS;').first
+      status = status_response && status_response['value']
 
-      raise NotReadyError, "Readyset database is not ready for service!" unless status && status.match(/Completed/)
+      unless status&.match(/Completed/)
+        raise NotReadyError, 'Readyset database is not ready for service!'
+      end
     end
   end
 end
