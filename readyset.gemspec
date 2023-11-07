@@ -5,11 +5,12 @@ require_relative 'lib/readyset/version'
 Gem::Specification.new do |spec|
   spec.name = 'readyset'
   spec.version = Readyset::VERSION
-  spec.authors = ['Paul Lemus']
-  spec.email = ['paullemus@protonmail.com']
+  spec.authors = ['ReadySet Technology, Inc.']
+  spec.email = ['info@readyset.io']
 
-  spec.summary = 'An adapter for ReadySet.'
-  spec.description = 'WIP.'
+  spec.summary = 'A Rails adapter for ReadySet, a partially-stateful, incrementally-maintained ' \
+                 'SQL cache.'
+  spec.description = 'This gem provides a Rails adapter to the ReadySet SQL cache.'
   spec.homepage = 'https://readyset.io'
   spec.required_ruby_version = '>= 2.7.0'
 
