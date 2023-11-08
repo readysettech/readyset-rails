@@ -2,14 +2,14 @@
 # spec/readyset-rails/command_spec.rb
 
 require 'spec_helper'
-require_relative './../lib/readyset/command.rb'
-require_relative './../lib/readyset.rb'
+require_relative './../lib/ready_set/command.rb'
+require_relative './../lib/ready_set.rb'
 
-RSpec.describe Readyset::Command do
+RSpec.describe ReadySet::Command do
   let(:connection_double) { instance_double('ActiveRecord::ConnectionAdapters::AbstractAdapter') }
 
   before do
-    allow(Readyset::Connection).to receive(:establish).and_return(connection_double)
+    allow(ReadySet::Connection).to receive(:establish).and_return(connection_double)
     allow(connection_double).to receive(:execute)
   end
 

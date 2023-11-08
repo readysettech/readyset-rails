@@ -1,8 +1,8 @@
 # lib/default_resolver.rb
 
-# lib/readyset/default_resolver.rb
+# lib/ready_set/default_resolver.rb
 
-module Readyset
+module ReadySet
   class DefaultResolver < ActiveRecord::Middleware::DatabaseSelector::Resolver
     def read_from_replica?(session, &block)
       # TODO: Implement good defaults for resolving requests

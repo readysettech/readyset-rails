@@ -1,13 +1,13 @@
-# lib/readyset/connection.rb
+# lib/ready_set/connection.rb
 
 require 'active_record'
 
-module Readyset
+module ReadySet
   class Connection
     class NotReadyError < StandardError; end
 
     def self.establish
-      ActiveRecord::Base.establish_connection(Readyset.configuration.connection_url)
+      ActiveRecord::Base.establish_connection(ReadySet.configuration.connection_url)
       check_database_status
       ActiveRecord::Base.connection
     end
@@ -17,7 +17,7 @@ module Readyset
       status = status_response && status_response['value']
 
       unless status&.match(/Completed/)
-        raise NotReadyError, 'Readyset database is not ready for service!'
+        raise NotReadyError, 'ReadySet database is not ready for service!'
       end
     end
   end
