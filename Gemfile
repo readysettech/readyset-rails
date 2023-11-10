@@ -7,6 +7,7 @@ gemspec
 
 gem "rake", "~> 13.0"
 
-gem "rspec", "~> 3.0"
-
-gem "rubocop", "~> 1.21"
+gem "combustion", "~> 1.3", :group => :test
+gem "sqlite3", "~> 1.6", :group => :test
+gem "rspec", "~> 3.12", :group => :test
+gem "rspec-rails", "~> 6.0", :group => :test

@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
 require "bundler/setup"
+require "combustion"
+require "rails"
+require "active_record/railtie"
+require "action_controller/railtie"
+Bundler.require :default, :development
 Bundler.setup
+Combustion.initialize! :all
+# spec/spec_helper.rb
 
 require "readyset"
 
