@@ -6,8 +6,6 @@ require "readyset/controller_extension"
 RSpec.describe Readyset::ControllerExtension, type: :controller do
   # Define a temporary controller for testing
   controller(ActionController::Base) do
-    # TODO: Move this to Railtie code
-    include Readyset::ControllerExtension
 
     # TODO: Rename.
     # TODO: Change options passed
