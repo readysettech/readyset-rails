@@ -1,9 +1,9 @@
-# lib/readyset/railtie.rb
+# lib/ready_set/railtie.rb
 
-module Readyset
+module ReadySet
   class Railtie < Rails::Railtie
     initializer 'readyset.configure_rails_initialization' do |app|
-      app.middleware.use Readyset::Middleware
+      app.middleware.use ReadySet::Middleware
     end
   end
 end

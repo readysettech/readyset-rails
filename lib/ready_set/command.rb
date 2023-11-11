@@ -1,6 +1,6 @@
 # lib/readyset-rails/command.rb
 
-module Readyset
+module ReadySet
   class Command
     def self.create_cache(name, query, always: false)
       cache_command =

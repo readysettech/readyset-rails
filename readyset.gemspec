@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require_relative 'lib/readyset/version'
+require_relative 'lib/ready_set/version'
 
 Gem::Specification.new do |spec|
   spec.name = 'readyset'
-  spec.version = Readyset::VERSION
+  spec.version = ReadySet::VERSION
   spec.authors = ['ReadySet Technology, Inc.']
   spec.email = ['info@readyset.io']
 

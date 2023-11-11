@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-RSpec.describe Readyset do
+RSpec.describe ReadySet do
   it 'has a version number' do
-    expect(Readyset::VERSION).not_to be nil
+    expect(ReadySet::VERSION).not_to be nil
   end
 end

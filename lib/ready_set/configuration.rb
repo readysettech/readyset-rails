@@ -1,6 +1,6 @@
-# lib/readyset/configuration.rb
+# lib/ready_set/configuration.rb
 
-module Readyset
+module ReadySet
   class Configuration
     attr_accessor :connection_url, :database_selector, :database_resolver,
       :database_resolver_context
@@ -8,7 +8,7 @@ module Readyset
     def initialize
       @connection_url = ENV['READYSET_URL'] || default_connection_url
       @database_selector = { delay: 2.seconds }
-      @database_resolver = Readyset::DefaultResolver
+      @database_resolver = ReadySet::DefaultResolver
       @database_resolver_context = nil
     end
 
