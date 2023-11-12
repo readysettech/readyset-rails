@@ -7,11 +7,11 @@ module Readyset
     extend ActiveSupport::Concern
 
     included do
-      # TODO: route_to_readyset if: -> { custom_logic }
-      # TODO: Accept the same options as `around_action`
-      def self.readyset_cache(*actions)
+      def self.route_to_readyset(*actions)
         around_action only: actions do |controller, block|
-          Readyset::RequestProcessor.process { block.call }
+          ActiveRecord::Base.connected_to(role: :replica_db_role) do
+            block.call
+          end
         end
       end
     end

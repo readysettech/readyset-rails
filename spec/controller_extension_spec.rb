@@ -4,15 +4,12 @@ require "rails_helper"
 require "readyset/controller_extension"
 
 RSpec.describe Readyset::ControllerExtension, type: :controller do
-  # Define a temporary controller for testing
   controller(ActionController::Base) do
-
-    # TODO: Rename.
-    # TODO: Change options passed
-    readyset_cache :index, :show
+    route_to_readyset :index
 
     def index
       @posts = Post.where(active: true)
+      @users = User.all
       render plain: "Index"
     end
 
@@ -28,22 +25,21 @@ RSpec.describe Readyset::ControllerExtension, type: :controller do
       get "show/:id" => "anonymous#show"
     end
 
-    # Stubbing or mocking the Post model
     stub_const("Post", Class.new)
+    stub_const("User", Class.new)
     allow(Post).to receive(:where).and_return([])
+    allow(User).to receive(:all).and_return([])
     allow(Post).to receive(:find).and_return(nil)
   end
 
-  # Ensuring that the around_action is correctly available
-  # RequestProcessor is the main behavior to trigger
-  describe "#readyset_cache" do
-    it "routes the index action through Readyset" do
-      expect(Readyset::RequestProcessor).to receive(:process).and_yield
+  describe "#route_to_readyset" do
+    it "routes queries in the index action to the replica database" do
+      expect(ActiveRecord::Base).to receive(:connected_to).with(role: :replica_db_role).and_yield
       get :index
     end
 
-    it "routes the show action through Readyset" do
-      expect(Readyset::RequestProcessor).to receive(:process).and_yield
+    it "does not route queries in the show action to the replica database" do
+      expect(ActiveRecord::Base).not_to receive(:connected_to).with(role: :replica_db_role)
       get :show, params: { id: 1 }
     end
   end
