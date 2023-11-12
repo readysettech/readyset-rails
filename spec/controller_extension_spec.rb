@@ -3,8 +3,13 @@
 require "rails_helper"
 require "readyset/controller_extension"
 
+# We're only using the controller helpers
 RSpec.describe Readyset::ControllerExtension, type: :controller do
+
+  # Mock controller to test our around_action
   controller(ActionController::Base) do
+
+    # Passes the :index action to ControllerExtension
     route_to_readyset :index
 
     def index
@@ -34,6 +39,8 @@ RSpec.describe Readyset::ControllerExtension, type: :controller do
 
   describe "#route_to_readyset" do
     it "routes queries in the index action to the replica database" do
+      # It's yielding the code within the action,
+      # which would be the queries.
       expect(ActiveRecord::Base).to receive(:connected_to).with(role: :replica_db_role).and_yield
       get :index
     end
