@@ -2,15 +2,11 @@
 
 require "bundler/setup"
 require "combustion"
-require "rails"
 require "active_record/railtie"
-require "action_controller/railtie"
-Bundler.require :default, :development
-Bundler.setup
-Combustion.initialize! :all
-# spec/spec_helper.rb
 
 require 'ready_set'
+Combustion.initialize! 'ready_set'
+
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

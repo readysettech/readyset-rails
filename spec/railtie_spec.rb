@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.xdescribe ReadySet::Railtie, type: :controller do
+RSpec.describe ReadySet::Railtie, type: :controller do
   controller(ActionController::Base) do
     # Define a test action
     def index
