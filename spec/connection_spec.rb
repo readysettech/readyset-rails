@@ -2,8 +2,8 @@
 # spec/readyset-rails/connection_spec.rb
 
 require "spec_helper"
-require_relative "./../lib/readyset/connection.rb"
-require_relative "./../lib/readyset.rb"
+require_relative "./../lib/readyset/connection"
+require_relative "./../lib/readyset"
 
 RSpec.describe Readyset::Connection do
   let(:connection_double) { instance_double("ActiveRecord::ConnectionAdapters::AbstractAdapter") }
@@ -37,7 +37,10 @@ RSpec.describe Readyset::Connection do
       end
 
       it "raises an error" do
-        expect { Readyset::Connection.establish }.to raise_error(Readyset::Connection::NotReadyError, "Readyset database is not ready for service!")
+        expect {
+          Readyset::Connection.establish
+        }.to raise_error(Readyset::Connection::NotReadyError,
+                         "Readyset database is not ready for service!")
       end
     end
   end

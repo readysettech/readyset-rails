@@ -4,6 +4,7 @@
 require "spec_helper"
 require_relative "./../lib/readyset/configuration.rb"
 
+# TODO: Correctly mock the configuration
 RSpec.describe Readyset::Configuration do
   let(:config) { described_class.new }
 
@@ -11,7 +12,7 @@ RSpec.describe Readyset::Configuration do
     it "sets default values" do
       config = Readyset::Configuration.new
 
-      expect(config.connection_url).to eq(ENV["READYSET_URL"] || "postgres://user:password@localhost:5432/readyset")
+      expect(config.connection_url).to eq(ENV["READYSET_URL"] || "sqlite3://:@:/db/combustion_test.sqlite")
       expect(config.database_selector).to eq({ delay: 2.seconds })
       expect(config.database_resolver).to eq(Readyset::DefaultResolver)
       expect(config.database_resolver_context).to be_nil
@@ -30,7 +31,7 @@ RSpec.describe Readyset::Configuration do
 
     context "when READYSET_URL is not set" do
       it "returns the default connection URL" do
-        expect(config.connection_url).to eq("postgres://user:password@localhost:5432/readyset")
+        expect(config.connection_url).to eq("sqlite3://:@:/db/combustion_test.sqlite")
       end
     end
   end
