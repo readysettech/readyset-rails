@@ -1,16 +1,18 @@
-# lib/readyset/middleware.rb
+# lib/ready_set/middleware.rb
 
 # Mentioned in the docs:
 # The core time extension is necessary for the default 2-second delay
-require "active_support/core_ext/integer/time"
-require "action_dispatch"
+require 'active_support/core_ext/integer/time'
+require 'action_dispatch'
 
-module Readyset
+module ReadySet
   class Middleware
     def initialize(app)
       @app = app
-      @resolver_klass = Readyset.configuration.database_resolver || ActiveRecord::Middleware::DatabaseSelector::Resolver
-      @context_klass = Readyset.configuration.database_resolver_context || ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
+      @resolver_klass = ReadySet.configuration.database_resolver ||
+        ActiveRecord::Middleware::DatabaseSelector::Resolver
+      @context_klass = ReadySet.configuration.database_resolver_context ||
+        ActiveRecord::Middleware::DatabaseSelector::Resolver::Session
     end
 
     def call(env)

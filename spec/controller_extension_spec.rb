@@ -3,11 +3,11 @@
 require "rails_helper"
 require "readyset/controller_extension"
 
-RSpec.describe Readyset::ControllerExtension, type: :controller do
+RSpec.describe ReadySet::ControllerExtension, type: :controller do
   # Global Set-up
   controller(ActionController::Base) do
     # NOTE: Not required as it's setup by the ReadySet Railtie
-    # include Readyset::ControllerExtension
+    # include ReadySet::ControllerExtension
 
     # Main point-of-interest in our fake controller
     # This line specifies that these queries will be re-routed

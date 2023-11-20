@@ -1,13 +1,15 @@
+inherit_from:
+  - .rubocop_airbnb.yml
+
 AllCops:
-  TargetRubyVersion: 2.6
+  TargetRubyVersion: 2.7
+  NewCops: disable
 
 Style/StringLiterals:
+  EnforcedStyle: single_quotes
   Enabled: true
-  EnforcedStyle: double_quotes
 
 Style/StringLiteralsInInterpolation:
+  EnforcedStyle: single_quotes
   Enabled: true
-  EnforcedStyle: double_quotes
 
-Layout/LineLength:
-  Max: 120

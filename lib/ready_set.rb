@@ -1,15 +1,15 @@
-# lib/readyset.rb
+# lib/ready_set.rb
 
-require "readyset/configuration"
-require "readyset/connection"
-require "readyset/command"
-require "readyset/default_resolver"
-require "readyset/middleware"
+require 'ready_set/configuration'
+require 'ready_set/connection'
+require 'ready_set/command'
+require 'ready_set/default_resolver'
+require 'ready_set/middleware'
 require "readyset/controller_extension"
 
-require "readyset/railtie" if defined?(Rails::Railtie)
+require 'ready_set/railtie' if defined?(Rails::Railtie)
 
-module Readyset
+module ReadySet
   class << self
     attr_writer :configuration
   end

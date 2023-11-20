@@ -2,7 +2,7 @@
 
 require "rails_helper"
 
-RSpec.describe Readyset::Railtie, type: :controller do
+RSpec.describe ReadySet::Railtie, type: :controller do
   controller(ActionController::Base) do
     # Define a test action
     def index
@@ -17,6 +17,6 @@ RSpec.describe Readyset::Railtie, type: :controller do
   end
 
   it "includes ControllerExtension into ActionController::Base" do
-    expect(controller.class.ancestors).to include(Readyset::ControllerExtension)
+    expect(controller.class.ancestors).to include(ReadySet::ControllerExtension)
   end
 end

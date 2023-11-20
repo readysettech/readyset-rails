@@ -1,13 +1,13 @@
 # lib/readyset/railtie.rb
 
-module Readyset
+module ReadySet
   class Railtie < Rails::Railtie
     initializer "readyset.configure_rails_initialization" do |app|
-      app.middleware.use Readyset::Middleware
+      app.middleware.use ReadySet::Middleware
     end
     initializer "readyset.action_controller" do
       ActiveSupport.on_load(:action_controller) do
-        include Readyset::ControllerExtension
+        include ReadySet::ControllerExtension
       end
     end
   end
