@@ -1,6 +1,6 @@
 # lib/ready_set/default_resolver.rb
 
-require "active_record"
+require 'active_record'
 
 module ReadySet
   class DefaultResolver < ActiveRecord::Middleware::DatabaseSelector::Resolver

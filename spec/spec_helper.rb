@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
-require "bundler/setup"
-require "combustion"
-require "active_record/railtie"
-
+require 'bundler/setup'
+require 'combustion'
+require 'active_record/railtie'
 require 'ready_set'
 Combustion.initialize! 'ready_set'
-
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
