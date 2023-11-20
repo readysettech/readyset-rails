@@ -1,5 +1,4 @@
 # default_resolver_spec.rb
-# spec/readyset/default_resolver_spec.rb
 
 require 'spec_helper'
 require_relative './../lib/ready_set/default_resolver'
@@ -11,7 +10,5 @@ RSpec.describe ReadySet::DefaultResolver do
     it 'returns true by default' do
       expect(resolver.read_from_replica?(nil)).to be true
     end
-
-    # Add more tests based on the logic you implement.
   end
 end

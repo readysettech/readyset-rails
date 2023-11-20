@@ -12,7 +12,8 @@ RSpec.describe ReadySet::Configuration do
     it 'sets default values' do
       config = ReadySet::Configuration.new
 
-      expect(config.connection_url).to eq(ENV["READYSET_URL"] || "sqlite3://:@:/db/combustion_test.sqlite")
+      expect(config.connection_url).to eq(ENV["READYSET_URL"] ||
+                                          "sqlite3://:@:/db/combustion_test.sqlite")
       expect(config.database_selector).to eq({ delay: 2.seconds })
       expect(config.database_resolver).to eq(ReadySet::DefaultResolver)
       expect(config.database_resolver_context).to be_nil

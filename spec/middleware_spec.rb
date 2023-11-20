@@ -1,5 +1,4 @@
 # middleware_spec.rb
-# spec/readyset/middleware_spec.rb
 
 require 'spec_helper'
 require_relative './../lib/ready_set/middleware'

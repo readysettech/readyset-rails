@@ -1,13 +1,13 @@
 # spec/readyset/controller_extension_spec.rb
 
 require "rails_helper"
-require "readyset/controller_extension"
+require "ready_set/controller_extension"
 
 RSpec.describe ReadySet::ControllerExtension, type: :controller do
   # Global Set-up
   controller(ActionController::Base) do
     # NOTE: Not required as it's setup by the ReadySet Railtie
-    # include ReadySet::ControllerExtension
+    include ReadySet::ControllerExtension
 
     # Main point-of-interest in our fake controller
     # This line specifies that these queries will be re-routed
@@ -45,7 +45,6 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
   end
 
   describe "#route_to_readyset" do
-
     # Lacks full coverage of possible #around_action parameters, but gets the point across
     # TODO: Refactor this spec and the mock controller/queries + params
     # TODO: Change route_to_readyset params for full coverage

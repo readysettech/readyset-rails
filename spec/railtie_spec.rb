@@ -1,4 +1,4 @@
-# spec/readyset/railtie_spec.rb
+# spec/railtie_spec.rb
 
 require "rails_helper"
 
