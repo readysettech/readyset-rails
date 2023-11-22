@@ -31,7 +31,7 @@ RSpec.describe ReadySet::Query do
       expect(subject[0].id).to eq('q_eafb620c78f5b9ac')
       expect(subject[0].text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
       expect(subject[0].cache_name).to eq('q_eafb620c78f5b9ac')
-      expect(subject[0].supported).to eq(:supported)
+      expect(subject[0].supported).to eq(:yes)
       expect(subject[0].count).to eq(5)
     end
   end
@@ -44,7 +44,7 @@ RSpec.describe ReadySet::Query do
         {
           'query id' => 'q_eafb620c78f5b9ac',
           'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'supported',
+          'readyset supported' => 'yes',
           'count' => 5,
         },
       ]
@@ -65,7 +65,7 @@ RSpec.describe ReadySet::Query do
       expect(subject[0].id).to eq('q_eafb620c78f5b9ac')
       expect(subject[0].text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
       expect(subject[0].cache_name).to be_nil
-      expect(subject[0].supported).to eq(:supported)
+      expect(subject[0].supported).to eq(:yes)
       expect(subject[0].count).to eq(5)
     end
   end
@@ -116,7 +116,7 @@ RSpec.describe ReadySet::Query do
         expect(subject.id).to eq(query_id)
         expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
         expect(subject.cache_name).to eq(query_id)
-        expect(subject.supported).to eq(:supported)
+        expect(subject.supported).to eq(:yes)
         expect(subject.count).to eq(5)
       end
     end
@@ -126,7 +126,7 @@ RSpec.describe ReadySet::Query do
         {
           'query id' => 'q_eafb620c78f5b9ac',
           'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'supported',
+          'readyset supported' => 'yes',
           'count' => 5,
         }
       end
@@ -150,7 +150,7 @@ RSpec.describe ReadySet::Query do
         expect(subject.id).to eq(query_id)
         expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
         expect(subject.cache_name).to be_nil
-        expect(subject.supported).to eq(:supported)
+        expect(subject.supported).to eq(:yes)
         expect(subject.count).to eq(5)
       end
     end
@@ -227,7 +227,7 @@ RSpec.describe ReadySet::Query do
         expect(subject.id).to eq(query_id)
         expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
         expect(subject.cache_name).to eq(query_id)
-        expect(subject.supported).to eq(:supported)
+        expect(subject.supported).to eq(:yes)
         expect(subject.count).to eq(5)
       end
     end
@@ -268,7 +268,7 @@ RSpec.describe ReadySet::Query do
         {
           'query id' => query_id,
           'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'supported',
+          'readyset supported' => 'yes',
           'count' => 5,
         }
       end
@@ -292,7 +292,7 @@ RSpec.describe ReadySet::Query do
         expect(subject.id).to eq(query_id)
         expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
         expect(subject.cache_name).to be_nil
-        expect(subject.supported).to eq(:supported)
+        expect(subject.supported).to eq(:yes)
         expect(subject.count).to eq(5)
       end
     end
@@ -351,7 +351,7 @@ RSpec.describe ReadySet::Query do
         {
           'query id' => 'q_eafb620c78f5b9ac',
           'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'supported',
+          'readyset supported' => 'yes',
           'count' => 5,
         }
       end
@@ -390,7 +390,7 @@ RSpec.describe ReadySet::Query do
         attrs = {
           'query id' => 'q_eafb620c78f5b9ac',
           'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'supported',
+          'readyset supported' => 'yes',
           'count' => 5,
         }
 
@@ -411,7 +411,7 @@ RSpec.describe ReadySet::Query do
         {
           'query id' => 'q_eafb620c78f5b9ac',
           'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'supported',
+          'readyset supported' => 'yes',
           'count' => 5,
         }
       end
@@ -463,7 +463,7 @@ RSpec.describe ReadySet::Query do
       attrs = {
         'query id' => query_id,
         'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-        'readyset supported' => 'supported',
+        'readyset supported' => 'yes',
         'count' => 5,
       }
 
@@ -489,7 +489,7 @@ RSpec.describe ReadySet::Query do
 
     it 'updates the attributes of the query with updated data from ReadySet' do
       expect(query.id).to eq(query_id)
-      expect(query.supported).to eq(:supported)
+      expect(query.supported).to eq(:yes)
       expect(query.cache_name).to eq(query_id)
       expect(query.fallback_allowed?).to eq(true)
       expect(query.count).to eq(0)

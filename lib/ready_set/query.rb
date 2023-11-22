@@ -97,7 +97,7 @@ module ReadySet
     def initialize(attributes)
       @id = attributes['query id']
       @text = attributes['proxied query'] || attributes['query text']
-      @supported = (attributes['readyset supported'] || 'supported').to_sym
+      @supported = (attributes['readyset supported'] || 'yes').to_sym
       @cache_name = attributes['cache name']
       @fallback_behavior = attributes['fallback behavior']&.to_sym
       @count = attributes['count']
@@ -150,7 +150,7 @@ module ReadySet
       result = ReadySet.raw_query(query, id).first
 
       if result.nil?
-        raise ReadySet::NotFoundError, id
+        raise NotFoundError, id
       else
         new(result.to_h)
       end
