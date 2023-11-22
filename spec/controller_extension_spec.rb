@@ -6,9 +6,6 @@ require 'ready_set/controller_extension'
 RSpec.describe ReadySet::ControllerExtension, type: :controller do
   # Global Set-up
   controller(ActionController::Base) do
-    # NOTE: Not required as it's setup by the ReadySet Railtie
-    include ReadySet::ControllerExtension
-
     # Main point-of-interest in our fake controller
     # This line specifies that these queries will be re-routed
     route_to_readyset only: [:index, :show]
@@ -46,8 +43,6 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
 
   describe '#route_to_readyset' do
     # Lacks full coverage of possible #around_action parameters, but gets the point across
-    # TODO: Refactor this spec and the mock controller/queries + params
-    # TODO: Change route_to_readyset params for full coverage
     # TODO: Test to re-route a single query out of an action
 
     # Sort of a leftover when it was just a symbol
@@ -73,6 +68,41 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
       it 'does not route queries to the replica database' do
         expect(ActiveRecord::Base).not_to receive(:connected_to).with(role: :replica_db_role)
         post :create, params: { post: { title: 'New Post' } }
+      end
+    end
+
+    # Testing accepted params; match around_action
+    before do
+      allow(controller.class).to receive(:around_action)
+    end
+
+    context 'with a single action' do
+      it 'accepts a single action symbol' do
+        controller.class.route_to_readyset :index
+        expect(controller.class).to have_received(:around_action).with(:index)
+      end
+    end
+
+    context 'with only option' do
+      it 'accepts :only option with multiple actions' do
+        controller.class.route_to_readyset only: [:index, :show]
+        expect(controller.class).to have_received(:around_action).with(only: [:index, :show])
+      end
+    end
+
+    context 'with except option' do
+      it 'accepts :except option' do
+        controller.class.route_to_readyset except: :index
+        expect(controller.class).to have_received(:around_action).with(except: :index)
+      end
+    end
+
+    context 'with multiple options and a block' do
+      it 'accepts multiple options and a block' do
+        block = proc {}
+        controller.class.route_to_readyset :index, only: [:index], if: -> { true }, &block
+        expect(controller.class).to have_received(:around_action).
+          with(:index, only: [:index], if: an_instance_of(Proc))
       end
     end
   end

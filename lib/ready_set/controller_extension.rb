@@ -24,11 +24,8 @@ module ReadySet
       #   end
       #
       def self.route_to_readyset(*actions, **options, &block)
-        # Combine actions and options into a single array
-        callbacks = actions << options
-
-        # Define an around_action with the combined callbacks array and the block
-        around_action(*callbacks) do |_controller, action_block|
+        # Use double splat (**) to pass options as keyword arguments
+        around_action(*actions, **options) do |_controller, action_block|
           # TODO: Decouple the role symbol, have it pull from a dev-configurable location.
           ActiveRecord::Base.connected_to(role: :replica_db_role) do
             # Functionally the same as yield, except we're highlighting
