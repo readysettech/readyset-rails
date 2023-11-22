@@ -7,6 +7,18 @@ module ReadySet
   class Query
     include ActiveModel::AttributeMethods
 
+    class CacheAlreadyExistsError < StandardError
+      attr_reader :id
+
+      def initialize(id)
+        @id = id
+      end
+
+      def to_s
+        "Query #{id} already has a cache"
+      end
+    end
+
     # An error raised when a `ReadySet::Query` is expected to be cached but isn't.
     class NotCachedError < StandardError
       attr_reader :id
@@ -34,6 +46,18 @@ module ReadySet
       end
     end
 
+    class UnsupportedError < StandardError
+      attr_reader :id
+
+      def initialize(id)
+        @id = id
+      end
+
+      def to_s
+        "Query #{id} is unsupported"
+      end
+    end
+
     attr_reader :id, :text, :cache_name, :supported, :count
 
     # Returns all of the queries currently cached on ReadySet by invoking the `SHOW CACHES` SQL
@@ -50,6 +74,20 @@ module ReadySet
     # @return [Array<ReadySet::Query>]
     def self.all_seen_but_not_cached
       ReadySet.raw_query('SHOW PROXIED QUERIES').map { |result| new(result) }
+    end
+
+    def self.cache_all_supported!(always: false)
+      all_seen_but_not_cached.
+        select { |query| query.supported == :yes }.
+        each { |query| query.cache!(always: always) }
+
+      nil
+    end
+
+    def self.drop_all_caches!
+      ReadySet.raw_query('DROP ALL CACHES')
+
+      nil
     end
 
     # Finds the query with the given query ID by directly querying ReadySet. If a query with the
@@ -103,11 +141,47 @@ module ReadySet
       @count = attributes['count']
     end
 
+    def cache!(name: nil, always: false)
+      if cached?
+        raise CacheAlreadyExistsError, id
+      elsif supported == :unsupported
+        raise UnsupportedError, id
+      else
+        query = 'CREATE CACHE '
+        params = []
+
+        if always
+          query += 'ALWAYS '
+        end
+
+        unless name.nil?
+          query += '? '
+          params.push(name)
+        end
+
+        query += 'FROM %s'
+        params.push(id)
+
+        ReadySet.raw_query(query, *params)
+
+        reload
+      end
+    end
+
     # Returns true if the query is cached and false otherwise.
     #
     # @return [Boolean]
     def cached?
       !!@cache_name
+    end
+
+    def drop_cache!
+      if cached?
+        ReadySet.raw_query('DROP CACHE %s', id)
+        reload
+      else
+        raise NotCachedError, id
+      end
     end
 
     # Returns true if the cached query supports falling back to the upstream database and false

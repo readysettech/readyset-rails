@@ -70,6 +70,117 @@ RSpec.describe ReadySet::Query do
     end
   end
 
+  describe '.cache_all_supported!' do
+    subject { ReadySet::Query.cache_all_supported!(always: true) }
+
+    let(:queries) { supported_queries + unsupported_or_pending_queries }
+    let(:supported_queries) do
+      [
+        ReadySet::Query.new(
+          'query id' => 'q_eafb620c78f5b9ac',
+          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
+          'readyset supported' => 'yes',
+          'count' => 5,
+        ),
+        ReadySet::Query.new(
+          'query id' => 'q_8892818e62c34ecd',
+          'proxied query' => 'SELECT * FROM "t" WHERE ("y" = $1)',
+          'readyset supported' => 'yes',
+          'count' => 5,
+        ),
+      ]
+    end
+    let(:unsupported_or_pending_queries) do
+      [
+        ReadySet::Query.new(
+          'query id' => 'q_f9bfc11a043b2f75',
+          'proxied query' => 'SHOW TIME ZONE',
+          'readyset supported' => 'unsupported',
+          'count' => 5,
+        ),
+        ReadySet::Query.new(
+          'query id' => 'q_d7cbfb8a03d589cf',
+          'proxied query' => 'SELECT * FROM "t" WHERE ("x" < 1)',
+          'readyset supported' => 'pending',
+          'count' => 5,
+        ),
+      ]
+    end
+
+    before do
+      allow(ReadySet::Query).to receive(:all_seen_but_not_cached).and_return(queries)
+    end
+
+    context 'when every ReadySet::Query#cache! invocation succeeds' do
+      before do
+        queries.each { |query| allow(query).to receive(:cache!).with(always: true) }
+        subject
+      end
+
+      it 'invokes ReadySet::Query#cache! on every supported query with the given "always" ' \
+          'parameter' do
+        supported_queries.each do |query|
+          expect(query).to have_received(:cache!).with(always: true)
+        end
+      end
+
+      it 'does not invoke ReadySet::Query#cache! on any unsupported or pending queries' do
+        unsupported_or_pending_queries.each do |query|
+          expect(query).not_to have_received(:cache!)
+        end
+      end
+
+      it 'returns nil' do
+        is_expected.to be_nil
+      end
+    end
+
+    context 'when one of the ReadySet::Query#cache! invocations fails' do
+      before do
+        allow(queries[0]).to receive(:cache!).and_raise(StandardError)
+        allow(queries[1]).to receive(:cache!)
+
+        begin
+          subject
+        rescue StandardError
+          nil
+        end
+      end
+
+      it 'raises the error raised by the ReadySet::Query#cache! invocation' do
+        expect { subject }.to raise_error(StandardError)
+      end
+
+      it 'invokes ReadySet::Query#cache! on the queries in the list up to and including the ' \
+          'query that caused the error with the given "always" parameter' do
+        expect(queries[0]).to have_received(:cache!).with(always: true)
+      end
+
+      it 'does not invoke ReadySet::Query#cache! on any of the queries in the list after the ' \
+          'query that caused the error' do
+        expect(queries[1]).not_to have_received(:cache!)
+      end
+    end
+  end
+
+  describe '.drop_all_caches!' do
+    subject { ReadySet::Query.drop_all_caches! }
+
+    before do
+      allow(ReadySet).to receive(:raw_query).with('DROP ALL CACHES')
+
+      subject
+    end
+
+    it 'invokes "DROP ALL CACHES" against ReadySet' do
+      expect(ReadySet).to have_received(:raw_query).with('DROP ALL CACHES')
+    end
+
+    it 'returns nil' do
+      is_expected.to be_nil
+    end
+  end
+
   describe '.find' do
     subject { ReadySet::Query.find(query_id) }
 
@@ -366,6 +477,132 @@ RSpec.describe ReadySet::Query do
     end
   end
 
+  describe '#cache!' do
+    context 'when the query is already cached' do
+      subject { query.cache! }
+
+      let(:query) do
+        ReadySet::Query.new({
+          'query id' => 'q_eafb620c78f5b9ac',
+          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
+          'cache name' => 'test cache',
+          'fallback behavior' => 'fallback allowed',
+          'count' => 5,
+        })
+      end
+
+      it 'raises a ReadySet::Query::CacheAlreadyExistsError' do
+        expect { subject }.to raise_error(ReadySet::Query::CacheAlreadyExistsError)
+      end
+    end
+
+    context 'when the query is unsupported' do
+      subject { query.cache! }
+
+      let(:query) do
+        ReadySet::Query.new(
+          'query id' => 'q_f9bfc11a043b2f75',
+          'proxied query' => 'SHOW TIME ZONE',
+          'readyset supported' => 'unsupported',
+          'count' => 5,
+        )
+      end
+
+      it 'raises a ReadySet::Query::UnsupportedError' do
+        expect { subject }.to raise_error(ReadySet::Query::UnsupportedError)
+      end
+    end
+
+    context 'when the query is supported and not cached' do
+      let(:query) do
+        ReadySet::Query.new({
+          'query id' => 'q_eafb620c78f5b9ac',
+          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
+          'readyset supported' => 'yes',
+          'count' => 5,
+        })
+      end
+      let(:query_id) { 'q_eafb620c78f5b9ac' }
+
+      before do
+        allow(ReadySet).to receive(:raw_query).with(*create_cache_statement)
+        allow(query).to receive(:reload)
+
+        subject
+      end
+
+      context 'when only the "always" parameter is passed' do
+        subject { query.cache!(always: true) }
+
+        let(:create_cache_statement) { ['CREATE CACHE ALWAYS FROM %s', query_id] }
+
+        it 'invokes "CREATE CACHE ALWAYS FROM <query_id>" on ReadySet' do
+          expect(ReadySet).to have_received(:raw_query).with(*create_cache_statement)
+        end
+
+        it 'invokes ReadySet::Query#reload' do
+          expect(query).to have_received(:reload)
+        end
+
+        it 'returns nil' do
+          is_expected.to be_nil
+        end
+      end
+
+      context 'when only the "name" parameter is passed' do
+        subject { query.cache!(name: name) }
+
+        let(:create_cache_statement) { ['CREATE CACHE ? FROM %s', name, query_id] }
+        let(:name) { 'test cache' }
+
+        it 'invokes "CREATE CACHE <name> FROM <query_id>" on ReadySet' do
+          expect(ReadySet).to have_received(:raw_query).with(*create_cache_statement)
+        end
+
+        it 'invokes Query#reload' do
+          expect(query).to have_received(:reload)
+        end
+
+        it 'returns nil' do
+          is_expected.to be_nil
+        end
+      end
+
+      context 'when both the "always" and "name" parameters are passed' do
+        subject { query.cache!(always: true, name: name) }
+
+        let(:create_cache_statement) { ['CREATE CACHE ALWAYS ? FROM %s', name, query_id] }
+        let(:name) { 'test cache' }
+
+        it 'invokes "CREATE CACHE ALWAYS <name> FROM <query_id>" on ReadySet' do
+          expect(ReadySet).to have_received(:raw_query).with(*create_cache_statement)
+        end
+
+        it 'invokes Query#reload' do
+          expect(query).to have_received(:reload)
+        end
+      end
+
+      context 'when neither the "always" nor the "name" parameters are passed' do
+        subject { query.cache! }
+
+        let(:create_cache_statement) { ['CREATE CACHE FROM %s', query_id] }
+
+        it 'invokes "CREATE CACHE FROM <query_id>" on ReadySet' do
+          expect(ReadySet).to have_received(:raw_query).with(*create_cache_statement)
+        end
+
+        it 'invokes Query#reload' do
+          expect(query).to have_received(:reload)
+        end
+
+        it 'returns nil' do
+          is_expected.to be_nil
+        end
+      end
+    end
+  end
+
   describe '#cached?' do
     context 'when the query has a cache name' do
       subject do
@@ -399,6 +636,57 @@ RSpec.describe ReadySet::Query do
 
       it 'returns false' do
         expect(subject.cached?).to eq(false)
+      end
+    end
+  end
+
+  describe '#drop_cache!' do
+    subject { query.drop_cache! }
+
+    context 'when the query is cached' do
+      let(:query_id) { 'q_eafb620c78f5b9ac' }
+      let(:query) do
+        ReadySet::Query.new(
+          'query id' => 'q_eafb620c78f5b9ac',
+          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
+          'cache name' => 'q_eafb620c78f5b9ac',
+          'fallback behavior' => 'fallback allowed',
+          'count' => 5,
+        )
+      end
+
+      before do
+        allow(ReadySet).to receive(:raw_query).with('DROP CACHE %s', query_id)
+        allow(query).to receive(:reload)
+
+        subject
+      end
+
+      it 'invokes "DROP CACHE <query_id> on ReadySet' do
+        expect(ReadySet).to have_received(:raw_query).with('DROP CACHE %s', query_id)
+      end
+
+      it 'invokes ReadySet::Query#reload' do
+        expect(query).to have_received(:reload)
+      end
+
+      it 'returns nil' do
+        is_expected.to be_nil
+      end
+    end
+
+    context 'when the query is not cached' do
+      let(:query) do
+        ReadySet::Query.new({
+          'query id' => 'q_eafb620c78f5b9ac',
+          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
+          'readyset supported' => 'yes',
+          'count' => 5,
+        })
+      end
+
+      it 'raises a ReadySet::Query::NotCachedError' do
+        expect { subject }.to raise_error(ReadySet::Query::NotCachedError)
       end
     end
   end
