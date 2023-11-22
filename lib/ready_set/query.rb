@@ -76,6 +76,11 @@ module ReadySet
       ReadySet.raw_query('SHOW PROXIED QUERIES').map { |result| new(result) }
     end
 
+    # Creates a cache for every supported query seen by ReadySet that is not already cached.
+    #
+    # @param [Boolean] always whether the cache should always be used. if this is true, queries
+    # to these caches will never fall back to the database
+    # @return [void]
     def self.cache_all_supported!(always: false)
       all_seen_but_not_cached.
         select { |query| query.supported == :yes }.
@@ -84,6 +89,9 @@ module ReadySet
       nil
     end
 
+    # Drops all the caches that exist on ReadySet.
+    #
+    # @return [void]
     def self.drop_all_caches!
       ReadySet.raw_query('DROP ALL CACHES')
 
@@ -141,6 +149,16 @@ module ReadySet
       @count = attributes['count']
     end
 
+    # Creates a cache on ReadySet for this query.
+    #
+    # @param [String] name the name for the cache being created
+    # @param [Boolean] always whether the cache should always be used. if this is true, queries
+    # to these caches will never fall back to the database
+    # @return [void]
+    # @raise [ReadySet::Query::CacheAlreadyExistsError] raised if this method is invoked on a
+    # query that already has a cache
+    # @raise [ReadySet::Query::UnsupportedError] raised if this method is invoked on an
+    # unsupported query
     def cache!(name: nil, always: false)
       if cached?
         raise CacheAlreadyExistsError, id
@@ -175,6 +193,11 @@ module ReadySet
       !!@cache_name
     end
 
+    # Drops the cache associated with this query.
+    #
+    # @return [void]
+    # @raise [ReadySet::Query::NotCachedError] raised if this method is invoked on a query that
+    # doesn't have a cache
     def drop_cache!
       if cached?
         ReadySet.raw_query('DROP CACHE %s', id)
