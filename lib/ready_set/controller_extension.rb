@@ -1,9 +1,12 @@
+require "ready_set/logger"
+
 module ReadySet
   # Module providing controller extensions for routing ActiveRecord queries to a replica database.
   module ControllerExtension
     extend ActiveSupport::Concern
 
     prepended do
+      prepend ReadySet::Logger
       # Routes ActiveRecord queries in specified actions to a replica database.
       #
       # This method defines an around_action callback that wraps
@@ -27,10 +30,16 @@ module ReadySet
         # Use double splat (**) to pass options as keyword arguments
         around_action(*actions, **options) do |_controller, action_block|
           # TODO: Decouple the role symbol, have it pull from a dev-configurable location.
+
+          setup_sql_comment_tag(:readyset_route, "routed through ReadySet")
+
           ActiveRecord::Base.connected_to(role: :replica_db_role) do
             # Functionally the same as yield, except we're highlighting
             # that it is action_block being called/yielded.
             action_block.call # All queries will connect to the replica
+          ensure
+            remove_query_tag(:readyset_route)
+            ActiveRecord::QueryLogs.taggings.delete(:custom)
           end
         end
       end

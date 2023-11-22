@@ -12,4 +12,4 @@
 Gemfile.lock
 /spec/internal/tmp/
 spec/internal/db/*.sqlite
-spec/internal/db/*
+spec/internal/db/**
