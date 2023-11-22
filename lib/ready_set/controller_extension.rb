@@ -3,7 +3,7 @@ module ReadySet
   module ControllerExtension
     extend ActiveSupport::Concern
 
-    included do
+    prepended do
       # Routes ActiveRecord queries in specified actions to a replica database.
       #
       # This method defines an around_action callback that wraps

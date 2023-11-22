@@ -7,7 +7,7 @@ module ReadySet
     end
     initializer 'readyset.action_controller' do
       ActiveSupport.on_load(:action_controller) do
-        include ReadySet::ControllerExtension
+        prepend ReadySet::ControllerExtension
       end
     end
   end
