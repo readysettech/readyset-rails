@@ -6,7 +6,7 @@ module ReadySet
     extend ActiveSupport::Concern
 
     prepended do
-      prepend ReadySet::Logger
+      include Logger # This includes Logger's methods
       # Routes ActiveRecord queries in specified actions to a replica database.
       #
       # This method defines an around_action callback that wraps

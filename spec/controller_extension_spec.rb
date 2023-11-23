@@ -7,7 +7,6 @@ require "ready_set/logger"
 RSpec.describe ReadySet::ControllerExtension, type: :controller do
   # Global Set-up
   controller(ActionController::Base) do
-    prepend ReadySet::Logger
     # Main point-of-interest in our fake controller
     # This line specifies that these queries will be re-routed
     route_to_readyset only: [:index, :show]
@@ -117,7 +116,7 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
     context "when route_to_readyset is used" do
       it "sets up a SQL comment tag via Logger" do
         get :index
-        expect(subject).to have_received(:setup_sql_comment_tag).with(:readyset_route, "routed through ReadySet")
+        expect(controller).to have_received(:setup_sql_comment_tag).with(:readyset_route, "routed through ReadySet")
       end
     end
 
