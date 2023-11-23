@@ -1,6 +1,6 @@
 # lib/ready_set/logger.rb
 
-require "active_record"
+require 'active_record'
 
 module ReadySet
   module Logger
@@ -36,7 +36,7 @@ module ReadySet
     # @return [Boolean] True if the tag exists, false otherwise.
     def tag_already_exists?(tag_name)
       ActiveRecord::QueryLogs.tags.any? do |tag|
-        tag.respond_to?(:has_key?) && tag.has_key?(tag_name)
+        tag.respond_to?(:has_key?) && tag.key?(tag_name)
       end
     end
   end

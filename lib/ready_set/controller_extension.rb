@@ -1,4 +1,4 @@
-require "ready_set/logger"
+require 'ready_set/logger'
 
 module ReadySet
   # Module providing controller extensions for routing ActiveRecord queries to a replica database.
@@ -31,7 +31,7 @@ module ReadySet
         around_action(*actions, **options) do |_controller, action_block|
           # TODO: Decouple the role symbol, have it pull from a dev-configurable location.
 
-          setup_sql_comment_tag(:readyset_route, "routed through ReadySet")
+          setup_sql_comment_tag(:readyset_route, 'routed through ReadySet')
 
           ActiveRecord::Base.connected_to(role: :replica_db_role) do
             # Functionally the same as yield, except we're highlighting
