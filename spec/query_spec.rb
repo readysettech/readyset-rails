@@ -627,6 +627,15 @@ RSpec.describe ReadySet::Query do
     ReadySet::Query.new(cached_query_attributes)
   end
 
+  def expect_queries_to_be_equal(query1, query2)
+    query1.id == query2.id &&
+      query1.text == query2.text &&
+      query1.supported == query2.supported &&
+      query1.cache_name == query2.cache_name &&
+      query1.send(:fallback_behavior) == query2.send(:fallback_behavior) &&
+      query1.count == query2.count
+  end
+
   def query_id
     'q_eafb620c78f5b9ac'
   end
@@ -642,14 +651,5 @@ RSpec.describe ReadySet::Query do
 
   def seen_but_not_cached_query
     ReadySet::Query.new(seen_but_not_cached_query_attributes)
-  end
-
-  def expect_queries_to_be_equal(query1, query2)
-    query1.id == query2.id &&
-      query1.text == query2.text &&
-      query1.supported == query2.supported &&
-      query1.cache_name == query2.cache_name &&
-      query1.send(:fallback_behavior) == query2.send(:fallback_behavior) &&
-      query1.count == query2.count
   end
 end
