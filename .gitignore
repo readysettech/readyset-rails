@@ -10,5 +10,5 @@
 # rspec failure tracking
 .rspec_status
 Gemfile.lock
-/spec/internal/tmp/
+spec/internal/tmp/
 spec/internal/db/*.sqlite
