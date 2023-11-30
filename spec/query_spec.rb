@@ -2,9 +2,9 @@
 
 # require 'spec_helper'
 
-RSpec.describe ReadySet::Query do
+RSpec.describe Readyset::Query do
   describe '.all_cached' do
-    subject { ReadySet::Query.all_cached }
+    subject { Readyset::Query.all_cached }
 
     let(:cached_queries) do
       [
@@ -19,12 +19,12 @@ RSpec.describe ReadySet::Query do
     end
 
     before do
-      allow(ReadySet).to receive(:raw_query).with('SHOW CACHES').and_return(cached_queries)
+      allow(Readyset).to receive(:raw_query).with('SHOW CACHES').and_return(cached_queries)
       subject
     end
 
-    it 'invokes "SHOW CACHES" on ReadySet' do
-      expect(ReadySet).to have_received(:raw_query).with('SHOW CACHES')
+    it 'invokes "SHOW CACHES" on Readyset' do
+      expect(Readyset).to have_received(:raw_query).with('SHOW CACHES')
     end
 
     it 'returns the cached queries' do
@@ -37,7 +37,7 @@ RSpec.describe ReadySet::Query do
   end
 
   describe '.all_seen_but_not_cached' do
-    subject { ReadySet::Query.all_seen_but_not_cached }
+    subject { Readyset::Query.all_seen_but_not_cached }
 
     let(:seen_but_not_cached_queries) do
       [
@@ -51,14 +51,14 @@ RSpec.describe ReadySet::Query do
     end
 
     before do
-      allow(ReadySet).to receive(:raw_query).with('SHOW PROXIED QUERIES').
+      allow(Readyset).to receive(:raw_query).with('SHOW PROXIED QUERIES').
         and_return(seen_but_not_cached_queries)
 
       subject
     end
 
-    it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
-      expect(ReadySet).to have_received(:raw_query).with('SHOW PROXIED QUERIES')
+    it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
+      expect(Readyset).to have_received(:raw_query).with('SHOW PROXIED QUERIES')
     end
 
     it 'returns the seen-but-not-cached queries' do
@@ -71,7 +71,7 @@ RSpec.describe ReadySet::Query do
   end
 
   describe '.find' do
-    subject { ReadySet::Query.find(query_id) }
+    subject { Readyset::Query.find(query_id) }
 
     let(:query_id) { 'q_eafb620c78f5b9ac' }
 
@@ -87,12 +87,12 @@ RSpec.describe ReadySet::Query do
       end
 
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
-          and_raise(ReadySet::Query::NotFoundError.new(query_id))
+          and_raise(Readyset::Query::NotFoundError.new(query_id))
 
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id).
           and_return([query])
@@ -100,14 +100,14 @@ RSpec.describe ReadySet::Query do
         subject
       end
 
-      it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
       end
 
-      it 'invokes "SHOW CACHES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW CACHES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id)
       end
@@ -132,7 +132,7 @@ RSpec.describe ReadySet::Query do
       end
 
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
           and_return([query])
@@ -140,8 +140,8 @@ RSpec.describe ReadySet::Query do
         subject
       end
 
-      it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
       end
@@ -157,43 +157,43 @@ RSpec.describe ReadySet::Query do
 
     context 'when no query with the given ID exists' do
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
-          and_raise(ReadySet::Query::NotFoundError.new(query_id))
+          and_raise(Readyset::Query::NotFoundError.new(query_id))
 
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id).
-          and_raise(ReadySet::Query::NotFoundError.new(query_id))
+          and_raise(Readyset::Query::NotFoundError.new(query_id))
 
         begin
           subject
-        rescue ReadySet::Query::NotFoundError
+        rescue Readyset::Query::NotFoundError
           nil
         end
       end
 
-      it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
       end
 
-      it 'invokes "SHOW CACHES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW CACHES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id)
       end
 
-      it 'raises a ReadySet::Query::NotFoundError' do
-        expect { subject }.to raise_error(ReadySet::Query::NotFoundError)
+      it 'raises a Readyset::Query::NotFoundError' do
+        expect { subject }.to raise_error(Readyset::Query::NotFoundError)
       end
     end
   end
 
   describe '.find_cached' do
-    subject { ReadySet::Query.find_cached(query_id) }
+    subject { Readyset::Query.find_cached(query_id) }
 
     let(:query_id) { 'q_eafb620c78f5b9ac' }
 
@@ -209,7 +209,7 @@ RSpec.describe ReadySet::Query do
       end
 
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id).
           and_return([query])
@@ -217,8 +217,8 @@ RSpec.describe ReadySet::Query do
         subject
       end
 
-      it 'invokes "SHOW CACHES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW CACHES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id)
       end
@@ -234,32 +234,32 @@ RSpec.describe ReadySet::Query do
 
     context 'when a cached query with the given ID does not exist' do
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id).
-          and_raise(ReadySet::Query::NotFoundError.new(query_id))
+          and_raise(Readyset::Query::NotFoundError.new(query_id))
 
         begin
           subject
-        rescue ReadySet::Query::NotFoundError
+        rescue Readyset::Query::NotFoundError
           nil
         end
       end
 
-      it 'invokes "SHOW CACHES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW CACHES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW CACHES WHERE query_id = ?', query_id)
       end
 
-      it 'raises a ReadySet::Query::NotFoundError' do
-        expect { subject }.to raise_error(ReadySet::Query::NotFoundError)
+      it 'raises a Readyset::Query::NotFoundError' do
+        expect { subject }.to raise_error(Readyset::Query::NotFoundError)
       end
     end
   end
 
   describe '.find_seen_but_not_cached' do
-    subject { ReadySet::Query.find_seen_but_not_cached(query_id) }
+    subject { Readyset::Query.find_seen_but_not_cached(query_id) }
 
     let(:query_id) { 'q_eafb620c78f5b9ac' }
 
@@ -274,7 +274,7 @@ RSpec.describe ReadySet::Query do
       end
 
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
           and_return([query])
@@ -282,8 +282,8 @@ RSpec.describe ReadySet::Query do
         subject
       end
 
-      it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
       end
@@ -299,32 +299,32 @@ RSpec.describe ReadySet::Query do
 
     context 'when a seen-but-not-cached query with the given ID does not exist' do
       before do
-        allow(ReadySet).
+        allow(Readyset).
           to receive(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
-          and_raise(ReadySet::Query::NotFoundError.new(query_id))
+          and_raise(Readyset::Query::NotFoundError.new(query_id))
 
         begin
           subject
-        rescue ReadySet::Query::NotFoundError
+        rescue Readyset::Query::NotFoundError
           nil
         end
       end
 
-      it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
-        expect(ReadySet).
+      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
+        expect(Readyset).
           to have_received(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
       end
 
-      it 'raises a ReadySet::Query::NotFoundError' do
-        expect { subject }.to raise_error(ReadySet::Query::NotFoundError)
+      it 'raises a Readyset::Query::NotFoundError' do
+        expect { subject }.to raise_error(Readyset::Query::NotFoundError)
       end
     end
   end
 
   describe '.new' do
-    subject { ReadySet::Query.new(attrs) }
+    subject { Readyset::Query.new(attrs) }
 
     context 'when given the attributes from a cached query' do
       let(:attrs) do
@@ -377,7 +377,7 @@ RSpec.describe ReadySet::Query do
           'count' => 5,
         }
 
-        ReadySet::Query.new(attrs)
+        Readyset::Query.new(attrs)
       end
 
       it 'returns true' do
@@ -394,7 +394,7 @@ RSpec.describe ReadySet::Query do
           'count' => 5,
         }
 
-        ReadySet::Query.new(attrs)
+        Readyset::Query.new(attrs)
       end
 
       it 'returns false' do
@@ -404,7 +404,7 @@ RSpec.describe ReadySet::Query do
   end
 
   describe '#fallback_allowed?' do
-    subject { ReadySet::Query.new(attrs).fallback_allowed? }
+    subject { Readyset::Query.new(attrs).fallback_allowed? }
 
     context 'when the query is not cached' do
       let(:attrs) do
@@ -416,8 +416,8 @@ RSpec.describe ReadySet::Query do
         }
       end
 
-      it 'raises a ReadySet::Query::NotCachedError' do
-        expect { subject }.to raise_error(ReadySet::Query::NotCachedError)
+      it 'raises a Readyset::Query::NotCachedError' do
+        expect { subject }.to raise_error(Readyset::Query::NotCachedError)
       end
     end
 
@@ -467,7 +467,7 @@ RSpec.describe ReadySet::Query do
         'count' => 5,
       }
 
-      ReadySet::Query.new(attrs)
+      Readyset::Query.new(attrs)
     end
 
     let(:query_id) { 'q_eafb620c78f5b9ac' }
@@ -480,14 +480,14 @@ RSpec.describe ReadySet::Query do
         'fallback behavior' => 'fallback allowed',
         'count' => 0,
       }
-      updated_query = ReadySet::Query.new(attrs)
+      updated_query = Readyset::Query.new(attrs)
 
-      allow(ReadySet::Query).to receive(:find).with(query_id).and_return(updated_query)
+      allow(Readyset::Query).to receive(:find).with(query_id).and_return(updated_query)
 
       subject
     end
 
-    it 'updates the attributes of the query with updated data from ReadySet' do
+    it 'updates the attributes of the query with updated data from Readyset' do
       expect(query.id).to eq(query_id)
       expect(query.supported).to eq(:yes)
       expect(query.cache_name).to eq(query_id)

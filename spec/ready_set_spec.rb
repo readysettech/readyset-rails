@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-RSpec.describe ReadySet do
+RSpec.describe Readyset do
   it 'has a version number' do
-    expect(ReadySet::VERSION).not_to be nil
+    expect(Readyset::VERSION).not_to be nil
   end
 
   describe '.raw_query' do
-    subject { ReadySet.raw_query(*query) }
+    subject { Readyset.raw_query(*query) }
 
     let(:connection) { instance_double(ActiveRecord::ConnectionAdapters::AbstractAdapter) }
     let(:connection_url) { 'postgres://postgres:readyset@127.0.0.1:5432/test' }
@@ -15,7 +15,7 @@ RSpec.describe ReadySet do
     let(:sanitized_query) { 'SELECT * FROM t WHERE x = 0' }
 
     before do
-      ReadySet.configuration.connection_url = connection_url
+      Readyset.configuration.connection_url = connection_url
 
       allow(ActiveRecord::Base).to receive(:establish_connection).with(connection_url)
       allow(ActiveRecord::Base).to receive(:connection).and_return(connection)
