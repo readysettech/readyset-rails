@@ -1,14 +1,14 @@
-# lib/ready_set.rb
+# lib/readyset.rb
 
-require 'ready_set/configuration'
-require 'ready_set/default_resolver'
-require 'ready_set/middleware'
-require 'ready_set/query'
-require 'ready_set/railtie' if defined?(Rails::Railtie)
+require 'readyset/configuration'
+require 'readyset/default_resolver'
+require 'readyset/middleware'
+require 'readyset/query'
+require 'readyset/railtie' if defined?(Rails::Railtie)
 
 require 'active_record'
 
-module ReadySet
+module Readyset
   attr_writer :configuration
 
   def self.configuration
@@ -28,7 +28,7 @@ module ReadySet
   # @param [Array<Object>] *sql_array the SQL array to be executed against ReadySet
   # @return [PG::Result]
   def self.raw_query(*sql_array)
-    ActiveRecord::Base.establish_connection(ReadySet.configuration.connection_url)
+    ActiveRecord::Base.establish_connection(Readyset.configuration.connection_url)
     ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
   end
 end
