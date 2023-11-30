@@ -57,7 +57,7 @@ RSpec.describe ReadySet::Query do
           'proxied query' => 'SELECT * FROM "t" WHERE ("y" = $1)',
           'readyset supported' => 'yes',
           'count' => 5,
-        })
+        }),
       ]
     end
     let(:unsupported_or_pending_queries) do
@@ -491,7 +491,7 @@ RSpec.describe ReadySet::Query do
 
     context 'when the query does not have a cache name' do
       subject { seen_but_not_cached_query }
-        attrs = 
+
       it 'returns false' do
         expect(subject.cached?).to eq(false)
       end
@@ -614,13 +614,13 @@ RSpec.describe ReadySet::Query do
   private
 
   def cached_query_attributes
-      {
-        'query id' => query_id,
-        'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-        'cache name' => query_id,
-        'fallback behavior' => 'fallback allowed',
-        'count' => 5,
-      }
+    {
+      'query id' => query_id,
+      'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
+      'cache name' => query_id,
+      'fallback behavior' => 'fallback allowed',
+      'count' => 5,
+    }
   end
 
   def cached_query
