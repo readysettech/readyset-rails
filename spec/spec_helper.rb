@@ -3,7 +3,7 @@
 require 'bundler/setup'
 Bundler.setup
 
-require 'ready_set'
+require 'readyset'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

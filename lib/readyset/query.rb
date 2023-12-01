@@ -1,8 +1,8 @@
-# lib/ready_set/query.rb
+# lib/readyset/query.rb
 
 require 'active_model'
 
-module ReadySet
+module Readyset
   # Represents a query that has been seen by ReadySet. This query may be cached or uncached.
   class Query
     include ActiveModel::AttributeMethods
@@ -19,7 +19,7 @@ module ReadySet
       end
     end
 
-    # An error raised when a `ReadySet::Query` is expected to be cached but isn't.
+    # An error raised when a `Readyset::Query` is expected to be cached but isn't.
     class NotCachedError < StandardError
       attr_reader :id
 
@@ -32,7 +32,7 @@ module ReadySet
       end
     end
 
-    # An error raised when a `ReadySet::Query` with the given ID can't be found on the ReadySet
+    # An error raised when a `Readyset::Query` with the given ID can't be found on the ReadySet
     # instance.
     class NotFoundError < StandardError
       attr_reader :id
@@ -63,17 +63,17 @@ module ReadySet
     # Returns all of the queries currently cached on ReadySet by invoking the `SHOW CACHES` SQL
     # extension on ReadySet.
     #
-    # @return [Array<ReadySet::Query>]
+    # @return [Array<Readyset::Query>]
     def self.all_cached
-      ReadySet.raw_query('SHOW CACHES').map { |result| new(result) }
+      Readyset.raw_query('SHOW CACHES').map { |result| new(result) }
     end
 
     # Returns all of the queries seen by ReadySet that are not currently cached. This list is
     # retrieved by invoking the `SHOW PROXIED QUERIES` SQL extension on ReadySet.
     #
-    # @return [Array<ReadySet::Query>]
+    # @return [Array<Readyset::Query>]
     def self.all_seen_but_not_cached
-      ReadySet.raw_query('SHOW PROXIED QUERIES').map { |result| new(result) }
+      Readyset.raw_query('SHOW PROXIED QUERIES').map { |result| new(result) }
     end
 
     # Creates a cache for every supported query seen by ReadySet that is not already cached.
@@ -99,11 +99,11 @@ module ReadySet
     end
 
     # Finds the query with the given query ID by directly querying ReadySet. If a query with the
-    # given ID doesn't exist, this method raises a `ReadySet::Query::NotFoundError`.
+    # given ID doesn't exist, this method raises a `Readyset::Query::NotFoundError`.
     #
     # @param [String] id the ID of the query to be searched for
     # @return [Query]
-    # @raise [ReadySet::Query::NotFoundError] raised if a query with the given ID cannot be found
+    # @raise [Readyset::Query::NotFoundError] raised if a query with the given ID cannot be found
     def self.find(id)
       find_seen_but_not_cached(id)
     rescue NotFoundError
@@ -111,11 +111,11 @@ module ReadySet
     end
 
     # Returns the cached query with the given query ID by directly querying ReadySet. If a cached
-    # query with the given ID doesn't exist, this method raises a `ReadySet::Query::NotFoundError`.
+    # query with the given ID doesn't exist, this method raises a `Readyset::Query::NotFoundError`.
     #
     # @param [String] id the ID of the query to be searched for
     # @return [Query]
-    # @raise [ReadySet::Query::NotFoundError] raised if a cached query with the given ID cannot be
+    # @raise [Readyset::Query::NotFoundError] raised if a cached query with the given ID cannot be
     # found
     def self.find_cached(id)
       find_inner('SHOW CACHES WHERE query_id = ?', id)
@@ -123,21 +123,21 @@ module ReadySet
 
     # Returns the query with the given query ID that has been seen by ReadySet but is not cached.
     # The query is searched for by directly querying ReadySet. If a seen-but-not-cached query with
-    # the given ID doesn't exist, this method raises a `ReadySet::Query::NotFoundError`.
+    # the given ID doesn't exist, this method raises a `Readyset::Query::NotFoundError`.
     #
     # @param [String] id the ID of the query to be searched for
     # @return [Query]
-    # @raise [ReadySet::Query::NotFoundError] raised if a seen-but-not-cached query with the given
+    # @raise [Readyset::Query::NotFoundError] raised if a seen-but-not-cached query with the given
     # ID cannot be found
     def self.find_seen_but_not_cached(id)
       find_inner('SHOW PROXIED QUERIES WHERE query_id = ?', id)
     end
 
-    # Constructs a new `ReadySet::Query` from the given hash. The keys of this hash should
+    # Constructs a new `Readyset::Query` from the given hash. The keys of this hash should
     # correspond to the columns in the results returned by the `SHOW PROXIED QUERIES` and
     # `SHOW CACHES` ReadySet SQL extensions.
     #
-    # @param [Hash] attributes the attributes from which the `ReadySet::Query` should be
+    # @param [Hash] attributes the attributes from which the `Readyset::Query` should be
     # constructed
     # @return [Query]
     def initialize(attributes)
@@ -155,9 +155,9 @@ module ReadySet
     # @param [Boolean] always whether the cache should always be used. if this is true, queries
     # to these caches will never fall back to the database
     # @return [void]
-    # @raise [ReadySet::Query::CacheAlreadyExistsError] raised if this method is invoked on a
+    # @raise [Readyset::Query::CacheAlreadyExistsError] raised if this method is invoked on a
     # query that already has a cache
-    # @raise [ReadySet::Query::UnsupportedError] raised if this method is invoked on an
+    # @raise [Readyset::Query::UnsupportedError] raised if this method is invoked on an
     # unsupported query
     def cache!(name: nil, always: false)
       if cached?
@@ -180,7 +180,7 @@ module ReadySet
         query += 'FROM %s'
         params.push(id)
 
-        ReadySet.raw_query(query, *params)
+        Readyset.raw_query(query, *params)
 
         reload
       end
@@ -196,11 +196,11 @@ module ReadySet
     # Drops the cache associated with this query.
     #
     # @return [void]
-    # @raise [ReadySet::Query::NotCachedError] raised if this method is invoked on a query that
+    # @raise [Readyset::Query::NotCachedError] raised if this method is invoked on a query that
     # doesn't have a cache
     def drop_cache!
       if cached?
-        ReadySet.raw_query('DROP CACHE %s', id)
+        Readyset.raw_query('DROP CACHE %s', id)
         reload
       else
         raise NotCachedError, id
@@ -209,10 +209,10 @@ module ReadySet
 
     # Returns true if the cached query supports falling back to the upstream database and false
     # otherwise. If the query is not cached, this method raises a
-    # `ReadySet::Query::NotCachedError`.
+    # `Readyset::Query::NotCachedError`.
     #
     # @return [Boolean]
-    # @raise [ReadySet::Query::NotCachedError]
+    # @raise [Readyset::Query::NotCachedError]
     def fallback_allowed?
       if cached?
         @fallback_behavior == 'fallback allowed'.to_sym
@@ -244,7 +244,7 @@ module ReadySet
     private
 
     def self.find_inner(query, id)
-      result = ReadySet.raw_query(query, id).first
+      result = Readyset.raw_query(query, id).first
 
       if result.nil?
         raise NotFoundError, id
