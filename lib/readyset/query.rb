@@ -93,7 +93,7 @@ module Readyset
     #
     # @return [void]
     def self.drop_all_caches!
-      ReadySet.raw_query('DROP ALL CACHES')
+      Readyset.raw_query('DROP ALL CACHES')
 
       nil
     end
