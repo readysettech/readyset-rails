@@ -7,26 +7,23 @@ module Readyset
   class Query
     include ActiveModel::AttributeMethods
 
-    class CacheAlreadyExistsError < StandardError
+    class BaseError < StandardError
       attr_reader :id
 
       def initialize(id)
         @id = id
       end
+    end
 
+    # An error raise when a query is expected not to be cached but is.
+    class CacheAlreadyExistsError < BaseError
       def to_s
         "Query #{id} already has a cache"
       end
     end
 
     # An error raised when a `Readyset::Query` is expected to be cached but isn't.
-    class NotCachedError < StandardError
-      attr_reader :id
-
-      def initialize(id)
-        @id = id
-      end
-
+    class NotCachedError < BaseError
       def to_s
         "Query #{id} is not cached"
       end
@@ -34,25 +31,14 @@ module Readyset
 
     # An error raised when a `Readyset::Query` with the given ID can't be found on the ReadySet
     # instance.
-    class NotFoundError < StandardError
-      attr_reader :id
-
-      def initialize(id)
-        @id = id
-      end
-
+    class NotFoundError < BaseError
       def to_s
         "Query not found for ID #{id}"
       end
     end
 
-    class UnsupportedError < StandardError
-      attr_reader :id
-
-      def initialize(id)
-        @id = id
-      end
-
+    # An error raised when a `Readyset::Query` is expected to be supported but isn't.
+    class UnsupportedError < BaseError
       def to_s
         "Query #{id} is unsupported"
       end
@@ -141,12 +127,25 @@ module Readyset
     # constructed
     # @return [Query]
     def initialize(attributes)
-      @id = attributes['query id']
-      @text = attributes['proxied query'] || attributes['query text']
-      @supported = (attributes['readyset supported'] || 'yes').to_sym
-      @cache_name = attributes['cache name']
-      @fallback_behavior = attributes['fallback behavior']&.to_sym
-      @count = attributes['count']
+      @id = attributes[:'query id']
+      @text = attributes[:'proxied query'] || attributes[:'query text']
+      @supported = (attributes[:'readyset supported'] || 'yes').to_sym
+      @cache_name = attributes[:'cache name']
+      @fallback_behavior = attributes[:'fallback behavior']&.to_sym
+      @count = attributes[:count]
+    end
+
+    # Checks two queries for equality by comparing all of their attributes.
+    #
+    # @param [Query] the query against which `self` should be compared
+    # @return [Boolean]
+    def ==(other)
+      id == other.id &&
+        text == other.text &&
+        supported == other.supported &&
+        cache_name == other.cache_name &&
+        fallback_behavior == other.fallback_behavior &&
+        count == other.count
     end
 
     # Creates a cache on ReadySet for this query.
@@ -249,7 +248,7 @@ module Readyset
       if result.nil?
         raise NotFoundError, id
       else
-        new(result.to_h)
+        new(result.to_h.symbolize_keys)
       end
     end
     private_class_method :find_inner
