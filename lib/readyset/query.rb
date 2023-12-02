@@ -7,14 +7,23 @@ module Readyset
   class Query
     include ActiveModel::AttributeMethods
 
-    # An error raised when a `Readyset::Query` is expected to be cached but isn't.
-    class NotCachedError < StandardError
+    class BaseError < StandardError
       attr_reader :id
 
       def initialize(id)
         @id = id
       end
+    end
 
+    # An error raise when a query is expected not to be cached but is.
+    class CacheAlreadyExistsError < BaseError
+      def to_s
+        "Query #{id} already has a cache"
+      end
+    end
+
+    # An error raised when a `Readyset::Query` is expected to be cached but isn't.
+    class NotCachedError < BaseError
       def to_s
         "Query #{id} is not cached"
       end
@@ -22,15 +31,16 @@ module Readyset
 
     # An error raised when a `Readyset::Query` with the given ID can't be found on the ReadySet
     # instance.
-    class NotFoundError < StandardError
-      attr_reader :id
-
-      def initialize(id)
-        @id = id
-      end
-
+    class NotFoundError < BaseError
       def to_s
         "Query not found for ID #{id}"
+      end
+    end
+
+    # An error raised when a `Readyset::Query` is expected to be supported but isn't.
+    class UnsupportedError < BaseError
+      def to_s
+        "Query #{id} is unsupported"
       end
     end
 
@@ -50,6 +60,28 @@ module Readyset
     # @return [Array<Readyset::Query>]
     def self.all_seen_but_not_cached
       Readyset.raw_query('SHOW PROXIED QUERIES').map { |result| new(result) }
+    end
+
+    # Creates a cache for every supported query seen by ReadySet that is not already cached.
+    #
+    # @param [Boolean] always whether the cache should always be used. if this is true, queries
+    # to these caches will never fall back to the database
+    # @return [void]
+    def self.cache_all_supported!(always: false)
+      all_seen_but_not_cached.
+        select { |query| query.supported == :yes }.
+        each { |query| query.cache!(always: always) }
+
+      nil
+    end
+
+    # Drops all the caches that exist on ReadySet.
+    #
+    # @return [void]
+    def self.drop_all_caches!
+      Readyset.raw_query('DROP ALL CACHES')
+
+      nil
     end
 
     # Finds the query with the given query ID by directly querying ReadySet. If a query with the
@@ -95,12 +127,62 @@ module Readyset
     # constructed
     # @return [Query]
     def initialize(attributes)
-      @id = attributes['query id']
-      @text = attributes['proxied query'] || attributes['query text']
-      @supported = (attributes['readyset supported'] || 'yes').to_sym
-      @cache_name = attributes['cache name']
-      @fallback_behavior = attributes['fallback behavior']&.to_sym
-      @count = attributes['count']
+      @id = attributes[:'query id']
+      @text = attributes[:'proxied query'] || attributes[:'query text']
+      @supported = (attributes[:'readyset supported'] || 'yes').to_sym
+      @cache_name = attributes[:'cache name']
+      @fallback_behavior = attributes[:'fallback behavior']&.to_sym
+      @count = attributes[:count]
+    end
+
+    # Checks two queries for equality by comparing all of their attributes.
+    #
+    # @param [Query] the query against which `self` should be compared
+    # @return [Boolean]
+    def ==(other)
+      id == other.id &&
+        text == other.text &&
+        supported == other.supported &&
+        cache_name == other.cache_name &&
+        fallback_behavior == other.fallback_behavior &&
+        count == other.count
+    end
+
+    # Creates a cache on ReadySet for this query.
+    #
+    # @param [String] name the name for the cache being created
+    # @param [Boolean] always whether the cache should always be used. if this is true, queries
+    # to these caches will never fall back to the database
+    # @return [void]
+    # @raise [Readyset::Query::CacheAlreadyExistsError] raised if this method is invoked on a
+    # query that already has a cache
+    # @raise [Readyset::Query::UnsupportedError] raised if this method is invoked on an
+    # unsupported query
+    def cache!(name: nil, always: false)
+      if cached?
+        raise CacheAlreadyExistsError, id
+      elsif supported == :unsupported
+        raise UnsupportedError, id
+      else
+        query = 'CREATE CACHE '
+        params = []
+
+        if always
+          query += 'ALWAYS '
+        end
+
+        unless name.nil?
+          query += '? '
+          params.push(name)
+        end
+
+        query += 'FROM %s'
+        params.push(id)
+
+        Readyset.raw_query(query, *params)
+
+        reload
+      end
     end
 
     # Returns true if the query is cached and false otherwise.
@@ -108,6 +190,20 @@ module Readyset
     # @return [Boolean]
     def cached?
       !!@cache_name
+    end
+
+    # Drops the cache associated with this query.
+    #
+    # @return [void]
+    # @raise [Readyset::Query::NotCachedError] raised if this method is invoked on a query that
+    # doesn't have a cache
+    def drop_cache!
+      if cached?
+        Readyset.raw_query('DROP CACHE %s', id)
+        reload
+      else
+        raise NotCachedError, id
+      end
     end
 
     # Returns true if the cached query supports falling back to the upstream database and false
@@ -152,7 +248,7 @@ module Readyset
       if result.nil?
         raise NotFoundError, id
       else
-        new(result.to_h)
+        new(result.to_h.symbolize_keys)
       end
     end
     private_class_method :find_inner

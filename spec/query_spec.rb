@@ -1,161 +1,150 @@
 # frozen_string_literal: true
 
-# require 'spec_helper'
+require 'spec_helper'
 
 RSpec.describe Readyset::Query do
   describe '.all_cached' do
     subject { Readyset::Query.all_cached }
 
-    let(:cached_queries) do
-      [
-        {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'cache name' => 'q_eafb620c78f5b9ac',
-          'fallback behavior' => 'fallback allowed',
-          'count' => 5,
-        },
-      ]
-    end
-
-    before do
-      allow(Readyset).to receive(:raw_query).with('SHOW CACHES').and_return(cached_queries)
-      subject
-    end
-
-    it 'invokes "SHOW CACHES" on Readyset' do
-      expect(Readyset).to have_received(:raw_query).with('SHOW CACHES')
-    end
-
-    it 'returns the cached queries' do
-      expect(subject[0].id).to eq('q_eafb620c78f5b9ac')
-      expect(subject[0].text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-      expect(subject[0].cache_name).to eq('q_eafb620c78f5b9ac')
-      expect(subject[0].supported).to eq(:yes)
-      expect(subject[0].count).to eq(5)
+    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'SHOW CACHES' do
+      let(:raw_query_result) { [attributes_for(:cached_query)] }
+      let(:expected_output) { [build(:cached_query)] }
     end
   end
 
   describe '.all_seen_but_not_cached' do
     subject { Readyset::Query.all_seen_but_not_cached }
 
-    let(:seen_but_not_cached_queries) do
+    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'SHOW PROXIED QUERIES' do
+      let(:raw_query_result) { [attributes_for(:seen_but_not_cached_query)] }
+      let(:expected_output) { [build(:seen_but_not_cached_query)] }
+    end
+  end
+
+  describe '.cache_all_supported!' do
+    subject { Readyset::Query.cache_all_supported!(always: true) }
+
+    let(:queries) { supported_queries + unsupported_or_pending_queries }
+    let(:supported_queries) do
       [
-        {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'yes',
-          'count' => 5,
-        },
+        build(:seen_but_not_cached_query),
+        build(:seen_but_not_cached_query,
+              :'query id' => 'q_8892818e62c34ecd',
+              :'proxied query' => 'SELECT * FROM "t" WHERE ("y" = $1)'),
+      ]
+    end
+    let(:unsupported_or_pending_queries) do
+      [
+        build(:unsupported_query),
+        build(:pending_query),
       ]
     end
 
     before do
-      allow(Readyset).to receive(:raw_query).with('SHOW PROXIED QUERIES').
-        and_return(seen_but_not_cached_queries)
-
-      subject
+      allow(Readyset::Query).to receive(:all_seen_but_not_cached).and_return(queries)
     end
 
-    it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
-      expect(Readyset).to have_received(:raw_query).with('SHOW PROXIED QUERIES')
+    context 'when every Readyset::Query#cache! invocation succeeds' do
+      before do
+        queries.each { |query| allow(query).to receive(:cache!).with(always: true) }
+        subject
+      end
+
+      it 'invokes Readyset::Query#cache! on every supported query with the given "always" ' \
+        'parameter' do
+        supported_queries.each do |query|
+          expect(query).to have_received(:cache!).with(always: true)
+        end
+      end
+
+      it 'does not invoke Readyset::Query#cache! on any unsupported or pending queries' do
+        unsupported_or_pending_queries.each do |query|
+          expect(query).not_to have_received(:cache!)
+        end
+      end
+
+      it 'returns nil' do
+        is_expected.to be_nil
+      end
     end
 
-    it 'returns the seen-but-not-cached queries' do
-      expect(subject[0].id).to eq('q_eafb620c78f5b9ac')
-      expect(subject[0].text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-      expect(subject[0].cache_name).to be_nil
-      expect(subject[0].supported).to eq(:yes)
-      expect(subject[0].count).to eq(5)
+    context 'when one of the Readyset::Query#cache! invocations fails' do
+      before do
+        allow(queries[0]).to receive(:cache!).and_raise(StandardError)
+        allow(queries[1]).to receive(:cache!)
+
+        begin
+          subject
+        rescue StandardError
+          nil
+        end
+      end
+
+      it 'raises the error raised by the Readyset::Query#cache! invocation' do
+        expect { subject }.to raise_error(StandardError)
+      end
+
+      it 'invokes Readyset::Query#cache! on the queries in the list up to and including the ' \
+        'query that caused the error with the given "always" parameter' do
+        expect(queries[0]).to have_received(:cache!).with(always: true)
+      end
+
+      it 'does not invoke Readyset::Query#cache! on any of the queries in the list after the ' \
+        'query that caused the error' do
+        expect(queries[1]).not_to have_received(:cache!)
+      end
     end
+  end
+
+  describe '.drop_all_caches!' do
+    subject { Readyset::Query.drop_all_caches! }
+
+    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP ALL CACHES'
   end
 
   describe '.find' do
     subject { Readyset::Query.find(query_id) }
 
-    let(:query_id) { 'q_eafb620c78f5b9ac' }
-
     context 'when a cached query with the given ID exists' do
-      let(:query) do
-        {
-          'query id' => query_id,
-          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'cache name' => query_id,
-          'fallback behavior' => 'fallback allowed',
-          'count' => 5,
-        }
-      end
+      let(:query) { build(:cached_query) }
+      let(:query_id) { query.id }
 
       before do
         allow(Readyset).
           to receive(:raw_query).
           with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
           and_raise(Readyset::Query::NotFoundError.new(query_id))
-
-        allow(Readyset).
-          to receive(:raw_query).
-          with('SHOW CACHES WHERE query_id = ?', query_id).
-          and_return([query])
-
-        subject
       end
 
-      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
-      end
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+          'SHOW CACHES WHERE query_id = ?' do
+        let(:args) { query_id }
+        let(:raw_query_result) { [attributes_for(:cached_query)] }
+        let(:expected_output) { query }
 
-      it 'invokes "SHOW CACHES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW CACHES WHERE query_id = ?', query_id)
-      end
-
-      it 'returns the query' do
-        expect(subject.id).to eq(query_id)
-        expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-        expect(subject.cache_name).to eq(query_id)
-        expect(subject.supported).to eq(:yes)
-        expect(subject.count).to eq(5)
+        it 'invokes "SHOW PROXIED QUERIES" on ReadySet' do
+          expect(Readyset).
+            to have_received(:raw_query).
+            with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
+        end
       end
     end
 
     context 'when a seen-but-not-cached query with the given ID exists' do
-      let(:query) do
-        {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'yes',
-          'count' => 5,
-        }
-      end
+      let(:query) { build(:seen_but_not_cached_query) }
+      let(:query_id) { query.id }
 
-      before do
-        allow(Readyset).
-          to receive(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
-          and_return([query])
-
-        subject
-      end
-
-      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
-      end
-
-      it 'returns the query' do
-        expect(subject.id).to eq(query_id)
-        expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-        expect(subject.cache_name).to be_nil
-        expect(subject.supported).to eq(:yes)
-        expect(subject.count).to eq(5)
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+          'SHOW PROXIED QUERIES WHERE query_id = ?' do
+        let(:args) { query_id }
+        let(:raw_query_result) { [attributes_for(:seen_but_not_cached_query)] }
+        let(:expected_output) { query }
       end
     end
 
     context 'when no query with the given ID exists' do
+      let(:query_id) { 'fake query id' }
+
       before do
         allow(Readyset).
           to receive(:raw_query).
@@ -195,44 +184,21 @@ RSpec.describe Readyset::Query do
   describe '.find_cached' do
     subject { Readyset::Query.find_cached(query_id) }
 
-    let(:query_id) { 'q_eafb620c78f5b9ac' }
-
     context 'when a cached query with the given ID exists' do
-      let(:query) do
-        {
-          'query id' => query_id,
-          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'cache name' => query_id,
-          'fallback behavior' => 'fallback allowed',
-          'count' => 5,
-        }
-      end
+      let(:query) { build(:cached_query) }
+      let(:query_id) { query.id }
 
-      before do
-        allow(Readyset).
-          to receive(:raw_query).
-          with('SHOW CACHES WHERE query_id = ?', query_id).
-          and_return([query])
-
-        subject
-      end
-
-      it 'invokes "SHOW CACHES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW CACHES WHERE query_id = ?', query_id)
-      end
-
-      it 'returns the query' do
-        expect(subject.id).to eq(query_id)
-        expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-        expect(subject.cache_name).to eq(query_id)
-        expect(subject.supported).to eq(:yes)
-        expect(subject.count).to eq(5)
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+'SHOW CACHES WHERE query_id = ?' do
+        let(:args) { expected_output.id }
+        let(:raw_query_result) { [attributes_for(:cached_query)] }
+        let(:expected_output) { query }
       end
     end
 
     context 'when a cached query with the given ID does not exist' do
+      let(:query_id) { 'fake query id' }
+
       before do
         allow(Readyset).
           to receive(:raw_query).
@@ -261,43 +227,21 @@ RSpec.describe Readyset::Query do
   describe '.find_seen_but_not_cached' do
     subject { Readyset::Query.find_seen_but_not_cached(query_id) }
 
-    let(:query_id) { 'q_eafb620c78f5b9ac' }
-
     context 'when a seen-but-not-cached query with the given ID exists' do
-      let(:query) do
-        {
-          'query id' => query_id,
-          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'yes',
-          'count' => 5,
-        }
-      end
+      let(:query) { build(:seen_but_not_cached_query) }
+      let(:query_id) { query.id }
 
-      before do
-        allow(Readyset).
-          to receive(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
-          and_return([query])
-
-        subject
-      end
-
-      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
-      end
-
-      it 'returns the query' do
-        expect(subject.id).to eq(query_id)
-        expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-        expect(subject.cache_name).to be_nil
-        expect(subject.supported).to eq(:yes)
-        expect(subject.count).to eq(5)
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+          'SHOW PROXIED QUERIES WHERE query_id = ?' do
+        let(:args) { expected_output.id }
+        let(:raw_query_result) { [attributes_for(:seen_but_not_cached_query)] }
+        let(:expected_output) { query }
       end
     end
 
     context 'when a seen-but-not-cached query with the given ID does not exist' do
+      let(:query_id) { 'fake query id' }
+
       before do
         allow(Readyset).
           to receive(:raw_query).
@@ -327,58 +271,107 @@ RSpec.describe Readyset::Query do
     subject { Readyset::Query.new(attrs) }
 
     context 'when given the attributes from a cached query' do
-      let(:attrs) do
-        {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'cache name' => 'test cache',
-          'fallback behavior' => 'fallback allowed',
-          'count' => 5,
-        }
-      end
+      let(:attrs) { attributes_for(:cached_query) }
 
       it "assigns the object's attributes correctly" do
-        expect(subject.id).to eq('q_eafb620c78f5b9ac')
-        expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-        expect(subject.cache_name).to eq('test cache')
-        expect(subject.send(:fallback_behavior)).to eq(:'fallback allowed')
-        expect(subject.count).to eq(5)
+        expect(subject).to eq(build(:cached_query))
       end
     end
 
     context 'when given the attributes from a seen-but-not-cached query' do
-      let(:attrs) do
-        {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'yes',
-          'count' => 5,
-        }
-      end
+      let(:attrs) { attributes_for(:seen_but_not_cached_query) }
 
       it "assigns the object's attributes correctly" do
-        expect(subject.id).to eq('q_eafb620c78f5b9ac')
-        expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-        expect(subject.cache_name).to be_nil
-        expect(subject.send(:fallback_behavior)).to be_nil
-        expect(subject.count).to eq(5)
+        expect(subject).to eq(build(:seen_but_not_cached_query))
+      end
+    end
+  end
+
+  describe '#cache!' do
+    context 'when the query is already cached' do
+      subject { query.cache! }
+
+      let(:query) { build(:cached_query) }
+
+      it 'raises a Readyset::Query::CacheAlreadyExistsError' do
+        expect { subject }.to raise_error(Readyset::Query::CacheAlreadyExistsError)
+      end
+    end
+
+    context 'when the query is unsupported' do
+      subject { query.cache! }
+
+      let(:query) { build(:unsupported_query) }
+
+      it 'raises a Readyset::Query::UnsupportedError' do
+        expect { subject }.to raise_error(Readyset::Query::UnsupportedError)
+      end
+    end
+
+    context 'when the query is supported and not cached' do
+      let(:query) { build(:seen_but_not_cached_query) }
+
+      before { allow(query).to receive(:reload) }
+
+      context 'when only the "always" parameter is passed' do
+        subject { query.cache!(always: true) }
+
+        it_behaves_like 'a wrapper around a ReadySet SQL extension',
+            'CREATE CACHE ALWAYS FROM %s' do
+          let(:args) { [query.id] }
+
+          it 'invokes Readyset::Query#reload' do
+            expect(query).to have_received(:reload)
+          end
+        end
+      end
+
+      context 'when only the "name" parameter is passed' do
+        subject { query.cache!(name: name) }
+
+        let(:name) { 'test cache' }
+
+        it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ? FROM %s' do
+          let(:args) { [name, query.id] }
+
+          it 'invokes Readyset::Query#reload' do
+            expect(query).to have_received(:reload)
+          end
+        end
+      end
+
+      context 'when both the "always" and "name" parameters are passed' do
+        subject { query.cache!(always: true, name: name) }
+
+        let(:name) { 'test cache' }
+
+        it_behaves_like 'a wrapper around a ReadySet SQL extension',
+'CREATE CACHE ALWAYS ? FROM %s' do
+          let(:args) { [name, query.id] }
+
+          it 'invokes Readyset::Query#reload' do
+            expect(query).to have_received(:reload)
+          end
+        end
+      end
+
+      context 'when neither the "always" nor the "name" parameters are passed' do
+        subject { query.cache! }
+
+        it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
+          let(:args) { [query.id] }
+
+          it 'invokes Readyset::Query#reload' do
+            expect(query).to have_received(:reload)
+          end
+        end
       end
     end
   end
 
   describe '#cached?' do
     context 'when the query has a cache name' do
-      subject do
-        attrs = {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'cache name' => 'q_eafb620c78f5b9ac',
-          'fallback behavior' => 'fallback allowed',
-          'count' => 5,
-        }
-
-        Readyset::Query.new(attrs)
-      end
+      subject { build(:cached_query) }
 
       it 'returns true' do
         expect(subject.cached?).to eq(true)
@@ -386,16 +379,7 @@ RSpec.describe Readyset::Query do
     end
 
     context 'when the query does not have a cache name' do
-      subject do
-        attrs = {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'yes',
-          'count' => 5,
-        }
-
-        Readyset::Query.new(attrs)
-      end
+      subject { build(:seen_but_not_cached_query) }
 
       it 'returns false' do
         expect(subject.cached?).to eq(false)
@@ -403,18 +387,37 @@ RSpec.describe Readyset::Query do
     end
   end
 
-  describe '#fallback_allowed?' do
-    subject { Readyset::Query.new(attrs).fallback_allowed? }
+  describe '#drop_cache!' do
+    subject { query.drop_cache! }
+
+    context 'when the query is cached' do
+      let(:query) { build(:cached_query) }
+
+      before { allow(query).to receive(:reload) }
+
+      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE %s' do
+        let(:args) { [query.id] }
+
+        it 'invokes Readyset::Query#reload' do
+          expect(query).to have_received(:reload)
+        end
+      end
+    end
 
     context 'when the query is not cached' do
-      let(:attrs) do
-        {
-          'query id' => 'q_eafb620c78f5b9ac',
-          'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-          'readyset supported' => 'yes',
-          'count' => 5,
-        }
+      let(:query) { build(:seen_but_not_cached_query) }
+
+      it 'raises a Readyset::Query::NotCachedError' do
+        expect { subject }.to raise_error(Readyset::Query::NotCachedError)
       end
+    end
+  end
+
+  describe '#fallback_allowed?' do
+    subject { query.fallback_allowed? }
+
+    context 'when the query is not cached' do
+      let(:query) { build(:seen_but_not_cached_query) }
 
       it 'raises a Readyset::Query::NotCachedError' do
         expect { subject }.to raise_error(Readyset::Query::NotCachedError)
@@ -423,15 +426,7 @@ RSpec.describe Readyset::Query do
 
     context 'when the query is cached' do
       context 'when the query supports fallback' do
-        let(:attrs) do
-          {
-            'query id' => 'q_eafb620c78f5b9ac',
-            'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-            'cache name' => 'q_eafb620c78f5b9ac',
-            'fallback behavior' => 'fallback allowed',
-            'count' => 5,
-          }
-        end
+        let(:query) { build(:cached_query) }
 
         it 'returns true' do
           is_expected.to eq(true)
@@ -439,15 +434,7 @@ RSpec.describe Readyset::Query do
       end
 
       context 'when the query does not support fallback' do
-        let(:attrs) do
-          {
-            'query id' => 'q_eafb620c78f5b9ac',
-            'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-            'cache name' => 'q_eafb620c78f5b9ac',
-            'fallback behavior' => 'no fallback',
-            'count' => 5,
-          }
-        end
+        let(:query) { build(:cached_query, :'fallback behavior' => 'no fallback') }
 
         it 'returns false' do
           is_expected.to eq(false)
@@ -459,40 +446,17 @@ RSpec.describe Readyset::Query do
   describe '#reload' do
     subject { query.reload }
 
-    let(:query) do
-      attrs = {
-        'query id' => query_id,
-        'proxied query' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-        'readyset supported' => 'yes',
-        'count' => 5,
-      }
-
-      Readyset::Query.new(attrs)
-    end
-
-    let(:query_id) { 'q_eafb620c78f5b9ac' }
+    let(:query) { build(:seen_but_not_cached_query) }
+    let(:updated_query) { build(:cached_query, :count => '0') }
 
     before do
-      attrs = {
-        'query id' => query_id,
-        'query text' => 'SELECT * FROM "t" WHERE ("x" = $1)',
-        'cache name' => query_id,
-        'fallback behavior' => 'fallback allowed',
-        'count' => 0,
-      }
-      updated_query = Readyset::Query.new(attrs)
-
-      allow(Readyset::Query).to receive(:find).with(query_id).and_return(updated_query)
+      allow(Readyset::Query).to receive(:find).with(query.id).and_return(updated_query)
 
       subject
     end
 
-    it 'updates the attributes of the query with updated data from Readyset' do
-      expect(query.id).to eq(query_id)
-      expect(query.supported).to eq(:yes)
-      expect(query.cache_name).to eq(query_id)
-      expect(query.fallback_allowed?).to eq(true)
-      expect(query.count).to eq(0)
+    it 'updates the attributes of the query with updated data from ReadySet' do
+      expect(query).to eq(updated_query)
     end
   end
 end
