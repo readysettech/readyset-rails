@@ -1,5 +1,5 @@
 FactoryBot.define do
-  factory :query, class: Readyset::Query do
+  factory :query, class: 'Readyset::Query' do
     add_attribute(:'query id') { 'q_eafb620c78f5b9ac' }
     count { '5' }
 
@@ -7,7 +7,6 @@ FactoryBot.define do
       add_attribute(:'query text') { 'SELECT * FROM "t" WHERE ("x" = $1)' }
       add_attribute(:'cache name') { 'q_eafb620c78f5b9ac' }
       add_attribute(:'fallback behavior') { 'fallback allowed' }
-
     end
 
     factory :seen_but_not_cached_query do

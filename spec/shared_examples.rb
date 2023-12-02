@@ -16,4 +16,4 @@ RSpec.shared_examples 'a wrapper around a ReadySet SQL extension' do |sql_comman
   it 'returns the expected result' do
     expect(subject).to eq(expected_output)
   end
-end 
+end

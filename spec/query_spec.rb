@@ -30,7 +30,7 @@ RSpec.describe Readyset::Query do
         build(:seen_but_not_cached_query),
         build(:seen_but_not_cached_query,
               :'query id' => 'q_8892818e62c34ecd',
-              :'proxied query' => 'SELECT * FROM "t" WHERE ("y" = $1)')
+              :'proxied query' => 'SELECT * FROM "t" WHERE ("y" = $1)'),
       ]
     end
     let(:unsupported_or_pending_queries) do
@@ -188,7 +188,8 @@ RSpec.describe Readyset::Query do
       let(:query) { build(:cached_query) }
       let(:query_id) { query.id }
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'SHOW CACHES WHERE query_id = ?' do
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+'SHOW CACHES WHERE query_id = ?' do
         let(:args) { expected_output.id }
         let(:raw_query_result) { [attributes_for(:cached_query)] }
         let(:expected_output) { query }
@@ -344,7 +345,8 @@ RSpec.describe Readyset::Query do
 
         let(:name) { 'test cache' }
 
-        it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ALWAYS ? FROM %s' do
+        it_behaves_like 'a wrapper around a ReadySet SQL extension',
+'CREATE CACHE ALWAYS ? FROM %s' do
           let(:args) { [name, query.id] }
 
           it 'invokes Readyset::Query#reload' do
@@ -445,7 +447,7 @@ RSpec.describe Readyset::Query do
     subject { query.reload }
 
     let(:query) { build(:seen_but_not_cached_query) }
-    let(:updated_query) { build(:cached_query, :'count' => '0') }
+    let(:updated_query) { build(:cached_query, :count => '0') }
 
     before do
       allow(Readyset::Query).to receive(:find).with(query.id).and_return(updated_query)
