@@ -26,11 +26,8 @@ module ReadySet
       def self.route_to_readyset(*actions, **options, &block)
         # Use double splat (**) to pass options as keyword arguments
         around_action(*actions, **options) do |_controller, action_block|
-          # TODO: Decouple the role symbol, have it pull from a dev-configurable location.
-          ActiveRecord::Base.connected_to(role: :replica_db_role) do
-            # Functionally the same as yield, except we're highlighting
-            # that it is action_block being called/yielded.
-            action_block.call # All queries will connect to the replica
+          Readyset.route do
+            action_block.call
           end
         end
       end

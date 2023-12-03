@@ -39,6 +39,8 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
     allow(Post).to receive(:where).and_return([])
     allow(Post).to receive(:find).and_return(nil)
     allow(Post).to receive(:create)
+
+    allow(Readyset).to receive(:route).and_yield
   end
 
   describe '#route_to_readyset' do
@@ -50,7 +52,7 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
       it 'routes queries to the replica database' do
         # Make sure it's working within the replica "context"
         # and it is executing the queries via yield
-        expect(ActiveRecord::Base).to receive(:connected_to).with(role: :replica_db_role).and_yield
+        expect(Readyset).to receive(:route).and_yield
         get :index
       end
     end
@@ -58,7 +60,7 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
     # Check if the options are passing in correctly
     context 'when accessing the show action with :only option' do
       it 'routes queries to the replica database' do
-        expect(ActiveRecord::Base).to receive(:connected_to).with(role: :replica_db_role).and_yield
+        expect(Readyset).to receive(:route).and_yield
         get :show, params: { id: 1 }
       end
     end
@@ -66,7 +68,7 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
     # Ensure that non-specified actions aren't getting re-routed
     context 'when accessing an action not included in :only' do
       it 'does not route queries to the replica database' do
-        expect(ActiveRecord::Base).not_to receive(:connected_to).with(role: :replica_db_role)
+        expect(Readyset).not_to receive(:route)
         post :create, params: { post: { title: 'New Post' } }
       end
     end
