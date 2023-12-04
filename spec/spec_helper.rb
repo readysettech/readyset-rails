@@ -5,9 +5,6 @@ Bundler.setup
 
 require 'combustion'
 require 'factory_bot'
-require 'readyset'
-require_relative 'shared_examples'
-Combustion.initialize! 'readyset'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure

@@ -1,6 +1,7 @@
 # lib/readyset.rb
 
 require 'readyset/configuration'
+require 'readyset/controller_extension'
 require 'readyset/default_resolver'
 require 'readyset/middleware'
 require 'readyset/query'
@@ -23,7 +24,7 @@ module Readyset
     configuration.inspect
   end
 
-  # Executes a raw SQL query against ReadySet. The query is sanitized prior to being executed.
+  # Executes a raw SQL query against Readyset. The query is sanitized prior to being executed.
   #
   # @param [Array<Object>] *sql_array the SQL array to be executed against ReadySet
   # @return [PG::Result]

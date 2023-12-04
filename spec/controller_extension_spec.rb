@@ -1,9 +1,9 @@
 # spec/readyset/controller_extension_spec.rb
 
 require 'rails_helper'
-require 'ready_set/controller_extension'
+require 'readyset/controller_extension'
 
-RSpec.describe ReadySet::ControllerExtension, type: :controller do
+RSpec.describe Readyset::ControllerExtension, type: :controller do
   # Global Set-up
   controller(ActionController::Base) do
     # Main point-of-interest in our fake controller
