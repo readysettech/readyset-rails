@@ -1,6 +1,5 @@
 # spec/readyset/controller_extension_spec.rb
 
-require 'rails_helper'
 require 'readyset/controller_extension'
 
 RSpec.describe Readyset::ControllerExtension, type: :controller do
