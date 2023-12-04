@@ -3,6 +3,7 @@
 require 'bundler/setup'
 Bundler.setup
 
+require 'combustion'
 require 'factory_bot'
 require 'readyset'
 require_relative 'shared_examples'
