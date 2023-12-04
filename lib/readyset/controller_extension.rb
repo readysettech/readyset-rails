@@ -1,4 +1,4 @@
-module ReadySet
+module Readyset
   # Module providing controller extensions for routing ActiveRecord queries to a replica database.
   module ControllerExtension
     extend ActiveSupport::Concern
