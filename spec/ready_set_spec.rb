@@ -15,7 +15,7 @@ RSpec.describe Readyset do
     let(:sanitized_query) { 'SELECT * FROM t WHERE x = 0' }
 
     before do
-      Readyset.configuration.connection_url = connection_url
+      Readyset::Configuration.configuration.database_url = connection_url
 
       allow(ActiveRecord::Base).to receive(:establish_connection).with(connection_url)
       allow(ActiveRecord::Base).to receive(:connection).and_return(connection)
