@@ -77,33 +77,45 @@ RSpec.describe Readyset::ControllerExtension, type: :controller do
       allow(controller.class).to receive(:around_action)
     end
 
+    def expect_around_action_called_with(*expected_args)
+      expect(controller.class).to have_received(:around_action).with(*expected_args)
+    end
+
     context 'with a single action' do
       it 'accepts a single action symbol' do
         controller.class.route_to_readyset :index
-        expect(controller.class).to have_received(:around_action).with(:index)
+
+        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('3.0')
+          # Ruby 2.7.1 handles keyword args weirdly.
+          expect_around_action_called_with(:index, anything)
+          # It'll return (:index, {}) rather than just (:index)
+        else
+          expect_around_action_called_with(:index)
+        end
       end
     end
 
     context 'with only option' do
       it 'accepts :only option with multiple actions' do
         controller.class.route_to_readyset only: [:index, :show]
-        expect(controller.class).to have_received(:around_action).with(only: [:index, :show])
+        expect_around_action_called_with(only: [:index, :show])
       end
     end
 
     context 'with except option' do
       it 'accepts :except option' do
         controller.class.route_to_readyset except: :index
-        expect(controller.class).to have_received(:around_action).with(except: :index)
+        expect_around_action_called_with(except: :index)
       end
     end
 
     context 'with multiple options and a block' do
       it 'accepts multiple options and a block' do
-        block = proc {}
-        controller.class.route_to_readyset :index, only: [:index], if: -> { true }, &block
-        expect(controller.class).to have_received(:around_action).
-          with(:index, only: [:index], if: an_instance_of(Proc))
+        block_conditional = proc {}
+        controller.class.route_to_readyset :show,
+                                           only: [:index, :show],
+                                           if: -> { true }, &block_conditional
+        expect_around_action_called_with(:show, only: [:index, :show], if: an_instance_of(Proc))
       end
     end
   end
