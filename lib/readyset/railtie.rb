@@ -17,6 +17,7 @@ module Readyset
 
         ActiveRecord::Relation.prepend(Readyset::RelationExtension)
       end
+<<<<<<< variant A
     end
 
     # This Railtie sets up the ReadySet connection pools, which prevents users from needing to
@@ -37,6 +38,8 @@ module Readyset
 
     rake_tasks do
       Dir[File.join(File.dirname(__FILE__), '../tasks/*.rake')].each { |f| load f }
+>>>>>>> variant B
+======= end
     end
   end
 end
