@@ -11,4 +11,5 @@
 .rspec_status
 Gemfile.lock
 spec/internal/tmp/
+spec/internal/config/storage.yml
 spec/internal/db/*.sqlite
