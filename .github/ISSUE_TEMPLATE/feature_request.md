@@ -14,10 +14,13 @@ assignees: ''
 [Include any relevant background information or context that led to this feature request.]
 
 **Detailed Explanation:**
-[Provide a detailed explanation of the feature, including how it should work and its expected behavior. Mention any specific changes to the current workflow or user experience.]
+[Provide a detailed explanation of the feature, including how it should work and its expected behavior.]
 
-**Problem Statement:**
-[Clearly articulate the problem that this feature will solve. Reference any specific issues or limitations in the current implementation of the Ruby gem that this feature addresses.]
+**From the user's perspective:**
+[How will the user interact with this feature? Reference any current limitations that this feature will address, including any subjective opinions regarding the developer-experience.]
+
+---
+## Optional information to add
 
 **Proposed Solution:**
 [Describe your proposed solution, including technical details, if applicable. Multiple ideas are okay too. Or just roughly describe what a successful implementation would look like.]
