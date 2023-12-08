@@ -1,1 +1,5 @@
-class Cat < ActiveRecord::Base; end
+class Cat < ApplicationRecord
+  def ==(other)
+    name == other.name
+  end
+end
