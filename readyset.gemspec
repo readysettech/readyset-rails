@@ -36,7 +36,10 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activesupport', '>= 6.1'
   spec.add_dependency 'rake', '~> 13.0'
 
+  spec.add_development_dependency 'combustion', '~> 1.3'
   spec.add_development_dependency 'factory_bot', '~> 6.4'
   spec.add_development_dependency 'rspec', '~> 3.2'
+  spec.add_development_dependency 'rspec-rails', '~> 6.0'
   spec.add_development_dependency 'rubocop-airbnb'
+  spec.add_development_dependency 'sqlite3', '~> 1.6'
 end

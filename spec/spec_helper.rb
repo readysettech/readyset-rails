@@ -3,9 +3,11 @@
 require 'bundler/setup'
 Bundler.setup
 
+require 'combustion'
 require 'factory_bot'
 require 'readyset'
 require_relative 'shared_examples'
+Combustion.initialize! :action_controller, :active_record
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
