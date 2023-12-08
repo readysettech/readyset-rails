@@ -118,7 +118,7 @@ module Readyset
   private
 
   class << self
-    private *delegate(:shard, to: :configuration)
+    private(*delegate(:shard, to: :configuration))
   end
 
   def self.reading_role
