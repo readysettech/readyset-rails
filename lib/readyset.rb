@@ -68,7 +68,7 @@ module Readyset
       params.push(id)
     end
 
-    Readyset.raw_query(query, *params)
+    raw_query(query, *params)
 
     nil
   end
@@ -93,9 +93,9 @@ module Readyset
     end
 
     if sql
-      Readyset.raw_query('DROP CACHE %s', sql)
+      raw_query('DROP CACHE %s', sql)
     else
-      Readyset.raw_query('DROP CACHE ?', name_or_id)
+      raw_query('DROP CACHE ?', name_or_id)
     end
 
     nil
@@ -105,9 +105,10 @@ module Readyset
   #
   # @param [Array<Object>] *sql_array the SQL array to be executed against ReadySet
   # @return [PG::Result]
-  def self.raw_query(*sql_array)
-    ActiveRecord::Base.establish_connection(Readyset::Configuration.configuration.database_url)
-    ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
+  def self.raw_query(*sql_array) # :nodoc:
+    ActiveRecord::Base.connected_to(role: reading_role, shard: shard, prevent_writes: false) do
+      ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
+    end
   end
 
   class << self
