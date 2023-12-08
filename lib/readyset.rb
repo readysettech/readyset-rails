@@ -2,6 +2,7 @@
 
 require 'readyset/configuration'
 require 'readyset/controller_extension'
+require 'readyset/model_extension'
 require 'readyset/query'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
