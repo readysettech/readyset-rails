@@ -14,12 +14,13 @@ module Readyset
       #   route_to_readyset except: :index
       #   route_to_readyset :show, only: [:index, :show], if: -> { some_condition }
       #
-      # @param args [Array<Symbol, Hash>] A list of actions and/or options dictating when the around_action should apply.
+      # @param args [Array<Symbol, Hash>] A list of actions and/or options dictating when the
+      # around_action should apply.
       #   The options can include Rails' standard `:only`, `:except`, and conditionals like `:if`.
-      # @yield [_controller, action_block] An optional block that will be executed around the actions.
-      #   The block receives the controller instance and a block (`action_block`) representing the original action.
-      # @yieldparam _controller [ActionController::Base] The instance of the controller on which the action is executed.
-      # @yieldparam action_block [Proc] The original action's block that can be called to proceed with the action execution.
+      # @yield [_controller, action_block] An optional block that will execute around the actions.
+      #   Yields the block from the controller action.
+      # @yieldparam _controller [ActionController::Base] Param is unused.
+      # @yieldparam action_block [Proc] The block passed along with the action.
       #
       def self.route_to_readyset(*args, &block)
         around_action(*args, *block) do |_controller, action_block|
