@@ -9,7 +9,7 @@ require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'active_record'
 
 module Readyset
-  # Executes a raw SQL query against Readyset. The query is sanitized prior to being executed.
+  # Executes a raw SQL query against ReadySet. The query is sanitized prior to being executed.
   #
   # @param [Array<Object>] *sql_array the SQL array to be executed against ReadySet
   # @return [PG::Result]
