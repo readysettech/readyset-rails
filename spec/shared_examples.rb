@@ -17,3 +17,12 @@ RSpec.shared_examples 'a wrapper around a ReadySet SQL extension' do |sql_comman
     expect(subject).to eq(expected_output)
   end
 end
+
+RSpec.shared_examples 'a logger method' do |log_level, message|
+  context "with valid log level #{log_level}" do
+    it "logs a #{log_level} message" do
+      expect(Readyset::Logger).to receive(:log).with(log_level, message)
+      Readyset::Logger.log(log_level, message)
+    end
+  end
+end
