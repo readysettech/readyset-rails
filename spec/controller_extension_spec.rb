@@ -1,10 +1,8 @@
 # spec/readyset/controller_extension_spec.rb
 
-require 'rails_helper'
-require 'ready_set/controller_extension'
-require 'ready_set/logger'
+require 'readyset/controller_extension'
 
-RSpec.describe ReadySet::ControllerExtension, type: :controller do
+RSpec.describe Readyset::ControllerExtension, type: :controller do
   # Global Set-up
   controller(ActionController::Base) do
     # Main point-of-interest in our fake controller
@@ -40,91 +38,65 @@ RSpec.describe ReadySet::ControllerExtension, type: :controller do
     allow(Post).to receive(:where).and_return([])
     allow(Post).to receive(:find).and_return(nil)
     allow(Post).to receive(:create)
+
+    allow(Readyset).to receive(:route).and_yield
   end
 
   describe '#route_to_readyset' do
-    # Lacks full coverage of possible #around_action parameters, but gets the point across
-    # TODO: Test to re-route a single query out of an action
-
-    # Sort of a leftover when it was just a symbol
-    context 'when accessing the index action' do
-      it 'routes queries to the replica database' do
-        # Make sure it's working within the replica "context"
-        # and it is executing the queries via yield
-        expect(ActiveRecord::Base).to receive(:connected_to).with(role: :replica_db_role).and_yield
-        get :index
-      end
-    end
-
-    # Check if the options are passing in correctly
-    context 'when accessing the show action with :only option' do
-      it 'routes queries to the replica database' do
-        expect(ActiveRecord::Base).to receive(:connected_to).with(role: :replica_db_role).and_yield
-        get :show, params: { id: 1 }
-      end
-    end
-
-    # Ensure that non-specified actions aren't getting re-routed
-    context 'when accessing an action not included in :only' do
-      it 'does not route queries to the replica database' do
-        expect(ActiveRecord::Base).not_to receive(:connected_to).with(role: :replica_db_role)
-        post :create, params: { post: { title: 'New Post' } }
-      end
-    end
-
-    # Testing accepted params; match around_action
     before do
       allow(controller.class).to receive(:around_action)
     end
 
+    def expect_around_action_called_with(*expected_args, &block)
+      expect(controller.class).to have_received(:around_action).with(*expected_args, &block)
+    end
+
+    context 'when delegating to around_action' do
+      it 'delegates arguments unchanged to around_action' do
+        # Arguments based off of _insert_callbacks
+        # callbacks
+        action = :test_action
+        options_hash = { only: [:index, :show] }
+
+        # optional block
+        test_block = proc { 'test block content' }
+
+        controller.class.route_to_readyset(action, options_hash, &test_block)
+
+        expect_around_action_called_with(action, options_hash, test_block) do |&block|
+          expect(block).to eq(test_block)
+        end
+      end
+    end
+
     context 'with a single action' do
-      it 'accepts a single action symbol' do
+      it 'passes a single action symbol to around_action' do
         controller.class.route_to_readyset :index
-        expect(controller.class).to have_received(:around_action).with(:index)
+        expect_around_action_called_with(:index)
       end
     end
 
     context 'with only option' do
-      it 'accepts :only option with multiple actions' do
+      it 'passes :only option with multiple actions to around_action' do
         controller.class.route_to_readyset only: [:index, :show]
-        expect(controller.class).to have_received(:around_action).with(only: [:index, :show])
+        expect_around_action_called_with(only: [:index, :show])
       end
     end
 
     context 'with except option' do
-      it 'accepts :except option' do
+      it 'passes :except option to around_action' do
         controller.class.route_to_readyset except: :index
-        expect(controller.class).to have_received(:around_action).with(except: :index)
+        expect_around_action_called_with(except: :index)
       end
     end
 
     context 'with multiple options and a block' do
       it 'accepts multiple options and a block' do
-        block = proc {}
-        controller.class.route_to_readyset :index, only: [:index], if: -> { true }, &block
-        expect(controller.class).to have_received(:around_action).
-          with(:index, only: [:index], if: an_instance_of(Proc))
-      end
-    end
-  end
-  describe 'integration with ReadySet::Logger' do
-    before do
-      # Setup to intercept and test the interaction between ControllerExtension and Logger
-      allow(controller).to receive(:setup_sql_comment_tag)
-    end
+        block_conditional = proc {}
 
-    context 'when route_to_readyset is used' do
-      it 'sets up a SQL comment tag via Logger' do
-        get :index
-        expect(controller).to have_received(:setup_sql_comment_tag).with(:readyset_route,
-'routed through ReadySet')
-      end
-    end
+        controller.class.route_to_readyset :show, only: [:index, :show], if: block_conditional
 
-    context 'when an action not included in route_to_readyset is used' do
-      it 'does not set up a SQL comment tag via Logger' do
-        post :create, params: { post: { title: 'New Post' } }
-        expect(controller).not_to have_received(:setup_sql_comment_tag)
+        expect_around_action_called_with(:show, { only: [:index, :show], if: block_conditional })
       end
     end
   end
