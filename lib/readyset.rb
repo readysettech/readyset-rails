@@ -37,27 +37,18 @@ module Readyset
       raise ArgumentError, 'Exactly one of the `id` and `sql` parameters must be provided'
     end
 
-    query = 'CREATE CACHE '
-    params = []
+    suffix = sql ? '%s' : '?'
+    from = (id || sql)
 
-    if always
-      query += 'ALWAYS '
-    end
-
-    unless name.nil?
-      query += '? '
-      params.push(name)
-    end
-
-    if sql
-      query += 'FROM %s'
-      params.push(sql)
+    if always && name
+      Readyset.raw_query('CREATE CACHE ALWAYS ? FROM ' + suffix, name, from)
+    elsif always
+      Readyset.raw_query('CREATE CACHE ALWAYS FROM ' + suffix, from)
+    elsif name
+      Readyset.raw_query('CREATE CACHE ? FROM ' + suffix, name, from)
     else
-      query += 'FROM ?'
-      params.push(id)
+      Readyset.raw_query('CREATE CACHE FROM ' + suffix, from)
     end
-
-    Readyset.raw_query(query, *params)
 
     nil
   end
