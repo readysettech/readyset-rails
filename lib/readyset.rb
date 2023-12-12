@@ -91,9 +91,9 @@ module Readyset
     end
   end
 
-  # Routes to ReadySet any queries that occur in the given block. If `prevent_writes` is false, an
+  # Routes to ReadySet any queries that occur in the given block. If `prevent_writes` is true, an
   # attempt to execute a write within the given block will raise an error. Keep in mind that if
-  # `prevent_writes` is true, any writes that occur within the given block will be proxied through
+  # `prevent_writes` is false, any writes that occur within the given block will be proxied through
   # ReadySet to the database.
   #
   # @param [Boolean] prevent_writes prevent writes from being executed on the connection to ReadySet
