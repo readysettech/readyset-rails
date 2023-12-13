@@ -164,23 +164,7 @@ module Readyset
       elsif supported == :unsupported
         raise UnsupportedError, id
       else
-        query = 'CREATE CACHE '
-        params = []
-
-        if always
-          query += 'ALWAYS '
-        end
-
-        unless name.nil?
-          query += '? '
-          params.push(name)
-        end
-
-        query += 'FROM %s'
-        params.push(id)
-
-        Readyset.raw_query(query, *params)
-
+        Readyset.create_cache!(id: id, name: name, always: always)
         reload
       end
     end
@@ -199,7 +183,7 @@ module Readyset
     # doesn't have a cache
     def drop_cache!
       if cached?
-        Readyset.raw_query('DROP CACHE %s', id)
+        Readyset.drop_cache!(id: id)
         reload
       else
         raise NotCachedError, id
