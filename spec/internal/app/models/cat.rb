@@ -1,1 +1,1 @@
-class Cat < ActiveRecord::Base; end
+class Cat < ApplicationRecord; end
