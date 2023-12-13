@@ -6,8 +6,6 @@ require 'readyset/query'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
 
-require 'active_record'
-
 module Readyset
   attr_writer :configuration
 
@@ -40,13 +38,13 @@ module Readyset
     from = (id || sql)
 
     if always && name
-      Readyset.raw_query('CREATE CACHE ALWAYS ? FROM ' + suffix, name, from)
+      raw_query('CREATE CACHE ALWAYS ? FROM ' + suffix, name, from)
     elsif always
-      Readyset.raw_query('CREATE CACHE ALWAYS FROM ' + suffix, from)
+      raw_query('CREATE CACHE ALWAYS FROM ' + suffix, from)
     elsif name
-      Readyset.raw_query('CREATE CACHE ? FROM ' + suffix, name, from)
+      raw_query('CREATE CACHE ? FROM ' + suffix, name, from)
     else
-      Readyset.raw_query('CREATE CACHE FROM ' + suffix, from)
+      raw_query('CREATE CACHE FROM ' + suffix, from)
     end
 
     nil
@@ -72,9 +70,9 @@ module Readyset
     end
 
     if sql
-      Readyset.raw_query('DROP CACHE %s', sql)
+      raw_query('DROP CACHE %s', sql)
     else
-      Readyset.raw_query('DROP CACHE ?', name_or_id)
+      raw_query('DROP CACHE ?', name_or_id)
     end
 
     nil
@@ -84,8 +82,43 @@ module Readyset
   #
   # @param [Array<Object>] *sql_array the SQL array to be executed against ReadySet
   # @return [PG::Result]
-  def self.raw_query(*sql_array)
-    ActiveRecord::Base.establish_connection(Readyset::Configuration.configuration.database_url)
-    ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
+  def self.raw_query(*sql_array) # :nodoc:
+    ActiveRecord::Base.connected_to(role: reading_role, shard: shard, prevent_writes: false) do
+      ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
+    end
   end
+
+  # Routes to ReadySet any queries that occur in the given block. If `prevent_writes` is true, an
+  # attempt to execute a write within the given block will raise an error. Keep in mind that if
+  # `prevent_writes` is false, any writes that occur within the given block will be proxied through
+  # ReadySet to the database.
+  #
+  # @param [Boolean] prevent_writes prevent writes from being executed on the connection to ReadySet
+  # @yield a block whose queries should be routed to ReadySet
+  # @return the value of the last line of the block
+  def self.route(prevent_writes: true, &block)
+    if prevent_writes
+      ActiveRecord::Base.
+        connected_to(role: reading_role, shard: shard, prevent_writes: true, &block)
+    else
+      ActiveRecord::Base.
+        connected_to(role: writing_role, shard: shard, prevent_writes: false, &block)
+    end
+  end
+
+  private
+
+  class << self
+    private(*delegate(:shard, to: :configuration))
+  end
+
+  def self.reading_role
+    ActiveRecord.reading_role
+  end
+  private_class_method :reading_role
+
+  def self.writing_role
+    ActiveRecord.writing_role
+  end
+  private_class_method :writing_role
 end
