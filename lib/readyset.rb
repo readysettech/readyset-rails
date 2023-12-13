@@ -3,6 +3,7 @@
 require 'readyset/configuration'
 require 'readyset/controller_extension'
 require 'readyset/model_extension'
+require 'readyset/explain'
 require 'readyset/query'
 require 'readyset/query/cached_query'
 require 'readyset/query/proxied_query'
@@ -81,6 +82,18 @@ module Readyset
     end
 
     nil
+  end
+
+  # Gets information about the given query from ReadySet, including whether it's supported to be
+  # cached, its current status, the rewritten query text, and the query ID.
+  #
+  # The information about the given query is retrieved by invoking `EXPLAIN CREATE CACHE FROM` on
+  # ReadySet.
+  #
+  # @param [String] a query about which information should be retrieved
+  # @return [Explain]
+  def self.explain(query)
+    Explain.call(query)
   end
 
   # Executes a raw SQL query against ReadySet. The query is sanitized prior to being executed.
