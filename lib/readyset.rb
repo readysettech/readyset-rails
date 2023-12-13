@@ -39,16 +39,14 @@ module Readyset
     from = (id || sql)
 
     if always && name
-      Readyset.raw_query('CREATE CACHE ALWAYS ? FROM ' + suffix, name, from)
+      raw_query('CREATE CACHE ALWAYS ? FROM ' + suffix, name, from)
     elsif always
-      Readyset.raw_query('CREATE CACHE ALWAYS FROM ' + suffix, from)
+      raw_query('CREATE CACHE ALWAYS FROM ' + suffix, from)
     elsif name
-      Readyset.raw_query('CREATE CACHE ? FROM ' + suffix, name, from)
+      raw_query('CREATE CACHE ? FROM ' + suffix, name, from)
     else
-      Readyset.raw_query('CREATE CACHE FROM ' + suffix, from)
+      raw_query('CREATE CACHE FROM ' + suffix, from)
     end
-
-    raw_query(query, *params)
 
     nil
   end
