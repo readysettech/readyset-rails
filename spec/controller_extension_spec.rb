@@ -43,67 +43,48 @@ RSpec.describe Readyset::ControllerExtension, type: :controller do
   end
 
   describe '#route_to_readyset' do
-    # Lacks full coverage of possible #around_action parameters, but gets the point across
-    # TODO: Test to re-route a single query out of an action
-
-    # Sort of a leftover when it was just a symbol
-    context 'when accessing the index action' do
-      it 'routes queries to the replica database' do
-        # Make sure it's working within the replica "context"
-        # and it is executing the queries via yield
-        expect(Readyset).to receive(:route).and_yield
-        get :index
-      end
-    end
-
-    # Check if the options are passing in correctly
-    context 'when accessing the show action with :only option' do
-      it 'routes queries to the replica database' do
-        expect(Readyset).to receive(:route).and_yield
-        get :show, params: { id: 1 }
-      end
-    end
-
-    # Ensure that non-specified actions aren't getting re-routed
-    context 'when accessing an action not included in :only' do
-      it 'does not route queries to the replica database' do
-        expect(Readyset).not_to receive(:route)
-        post :create, params: { post: { title: 'New Post' } }
-      end
-    end
-
-    # Testing accepted params; match around_action
     before do
       allow(controller.class).to receive(:around_action)
     end
 
-    def expect_around_action_called_with(*expected_args)
-      expect(controller.class).to have_received(:around_action).with(*expected_args)
+    def expect_around_action_called_with(*expected_args, &block)
+      expect(controller.class).to have_received(:around_action).with(*expected_args, &block)
     end
 
-    context 'with a single action' do
-      it 'accepts a single action symbol' do
-        controller.class.route_to_readyset :index
+    context 'when delegating to around_action' do
+      it 'delegates arguments unchanged to around_action' do
+        # Arguments based off of _insert_callbacks
+        # callbacks
+        action = :test_action
+        options_hash = { only: [:index, :show] }
 
-        if Gem::Version.new(RUBY_VERSION) < Gem::Version.new('3.0')
-          # Ruby 2.7.1 handles keyword args weirdly.
-          expect_around_action_called_with(:index, anything)
-          # It'll return (:index, {}) rather than just (:index)
-        else
-          expect_around_action_called_with(:index)
+        # optional block
+        test_block = proc { 'test block content' }
+
+        controller.class.route_to_readyset(action, options_hash, &test_block)
+
+        expect_around_action_called_with(action, options_hash, test_block) do |&block|
+          expect(block).to eq(test_block)
         end
       end
     end
 
+    context 'with a single action' do
+      it 'passes a single action symbol to around_action' do
+        controller.class.route_to_readyset :index
+        expect_around_action_called_with(:index)
+      end
+    end
+
     context 'with only option' do
-      it 'accepts :only option with multiple actions' do
+      it 'passes :only option with multiple actions to around_action' do
         controller.class.route_to_readyset only: [:index, :show]
         expect_around_action_called_with(only: [:index, :show])
       end
     end
 
     context 'with except option' do
-      it 'accepts :except option' do
+      it 'passes :except option to around_action' do
         controller.class.route_to_readyset except: :index
         expect_around_action_called_with(except: :index)
       end
@@ -112,10 +93,10 @@ RSpec.describe Readyset::ControllerExtension, type: :controller do
     context 'with multiple options and a block' do
       it 'accepts multiple options and a block' do
         block_conditional = proc {}
-        controller.class.route_to_readyset :show,
-                                           only: [:index, :show],
-                                           if: -> { true }, &block_conditional
-        expect_around_action_called_with(:show, only: [:index, :show], if: an_instance_of(Proc))
+
+        controller.class.route_to_readyset :show, only: [:index, :show], if: block_conditional
+
+        expect_around_action_called_with(:show, { only: [:index, :show], if: block_conditional })
       end
     end
   end
