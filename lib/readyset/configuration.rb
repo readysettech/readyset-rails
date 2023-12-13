@@ -8,6 +8,7 @@ module Readyset
     def initialize
       @migration_path = File.join(Rails.root, 'db/readyset_caches.rb')
       @shard = :readyset
+      @query_annotations = false
     end
 
     def failover
