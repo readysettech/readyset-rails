@@ -8,7 +8,7 @@ RSpec.describe Readyset do
   end
 
   describe '.create_cache!' do
-    let(:query) { build(:seen_but_not_cached_query) }
+    let(:query) { build(:proxied_query) }
 
     context 'when given neither a SQL string nor an ID' do
       subject { Readyset.create_cache! }
@@ -80,7 +80,7 @@ RSpec.describe Readyset do
   end
 
   describe '.drop_cache!' do
-    let(:query) { build(:seen_but_not_cached_query) }
+    let(:query) { build(:proxied_query) }
 
     context 'when given neither a SQL string nor an ID' do
       subject { Readyset.drop_cache! }
