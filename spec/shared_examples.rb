@@ -1,7 +1,7 @@
 RSpec.shared_examples 'a wrapper around a ReadySet SQL extension' do |sql_command|
   let(:args) { [] }
   let(:expected_output) { nil }
-  let(:raw_query_result) { nil }
+  let(:raw_query_result) { [] }
 
   before do
     allow(Readyset).to receive(:raw_query).with(sql_command, *args).and_return(raw_query_result)

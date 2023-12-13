@@ -309,62 +309,24 @@ RSpec.describe Readyset::Query do
     end
 
     context 'when the query is supported and not cached' do
+      subject { query.cache!(**args) }
+
+      let(:args) { { always: true, name: 'test name' } }
       let(:query) { build(:seen_but_not_cached_query) }
 
-      before { allow(query).to receive(:reload) }
+      before do
+        allow(query).to receive(:reload)
+        allow(Readyset).to receive(:create_cache!).with(id: query.id, **args)
 
-      context 'when only the "always" parameter is passed' do
-        subject { query.cache!(always: true) }
-
-        it_behaves_like 'a wrapper around a ReadySet SQL extension',
-            'CREATE CACHE ALWAYS FROM %s' do
-          let(:args) { [query.id] }
-
-          it 'invokes Readyset::Query#reload' do
-            expect(query).to have_received(:reload)
-          end
-        end
+        subject
       end
 
-      context 'when only the "name" parameter is passed' do
-        subject { query.cache!(name: name) }
-
-        let(:name) { 'test cache' }
-
-        it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ? FROM %s' do
-          let(:args) { [name, query.id] }
-
-          it 'invokes Readyset::Query#reload' do
-            expect(query).to have_received(:reload)
-          end
-        end
+      it 'invokes Readyset.create_cache! with the correct arguments' do
+        expect(Readyset).to have_received(:create_cache!).with(id: query.id, **args)
       end
 
-      context 'when both the "always" and "name" parameters are passed' do
-        subject { query.cache!(always: true, name: name) }
-
-        let(:name) { 'test cache' }
-
-        it_behaves_like 'a wrapper around a ReadySet SQL extension',
-'CREATE CACHE ALWAYS ? FROM %s' do
-          let(:args) { [name, query.id] }
-
-          it 'invokes Readyset::Query#reload' do
-            expect(query).to have_received(:reload)
-          end
-        end
-      end
-
-      context 'when neither the "always" nor the "name" parameters are passed' do
-        subject { query.cache! }
-
-        it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
-          let(:args) { [query.id] }
-
-          it 'invokes Readyset::Query#reload' do
-            expect(query).to have_received(:reload)
-          end
-        end
+      it 'invokes Readyset::Query#reload' do
+        expect(query).to have_received(:reload)
       end
     end
   end
@@ -393,14 +355,19 @@ RSpec.describe Readyset::Query do
     context 'when the query is cached' do
       let(:query) { build(:cached_query) }
 
-      before { allow(query).to receive(:reload) }
+      before do
+        allow(query).to receive(:reload)
+        allow(Readyset).to receive(:drop_cache!).with(id: query.id)
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE %s' do
-        let(:args) { [query.id] }
+        subject
+      end
 
-        it 'invokes Readyset::Query#reload' do
-          expect(query).to have_received(:reload)
-        end
+      it 'invokes Readyset.drop_cache!' do
+        expect(Readyset).to have_received(:drop_cache!).with(id: query.id)
+      end
+
+      it 'invokes Readyset::Query#reload' do
+        expect(query).to have_received(:reload)
       end
     end
 
