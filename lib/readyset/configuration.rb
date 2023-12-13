@@ -3,11 +3,12 @@ require 'active_record'
 
 module Readyset
   class Configuration
-    attr_accessor :database_url, :shard
+    attr_accessor :database_url, :query_annotations, :shard
 
     def initialize
       @database_url = ENV['READYSET_URL'] || default_connection_url
       @shard = :readyset
+      @query_annotations = false
     end
 
     def self.current_config
