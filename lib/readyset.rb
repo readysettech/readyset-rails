@@ -13,8 +13,17 @@ module Readyset
     @configuration ||= Configuration.new
   end
 
+  def self.current_configuration
+    configuration.inspect
+  end
+
+  class << self
+    alias_method :config, :configuration
+    alias_method :current_config, :current_configuration
+  end
+
   def self.configure
-    yield(configuration)
+    yield configuration
   end
 
   # Creates a new cache on ReadySet using the given ReadySet query ID or SQL query. Exactly one of
@@ -48,10 +57,6 @@ module Readyset
     end
 
     nil
-  end
-
-  def self.current_config
-    configuration.inspect
   end
 
   # Creates a new cache on ReadySet using the given SQL query or ReadySet query ID. Exactly one of
