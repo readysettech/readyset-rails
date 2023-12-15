@@ -43,7 +43,7 @@ RSpec.describe Readyset::Configuration do
       # Setup
       allow(ENV).to receive(:[]).with('READYSET_URL').and_return(nil)
       allow(Rails).to receive_message_chain(:root,
-                                            :join).
+                              :join).
         and_return('spec/internal/config/database.yml')
       allow(File).to receive(:exist?).and_return(false)
       allow(Rails.logger).to receive(:error)
