@@ -1,10 +1,13 @@
 require 'active_model'
 
+require 'readyset/query/queryable'
+
 module Readyset
   module Query
     # Represents a query that is cached by ReadySet.
     class CachedQuery
       include ActiveModel::AttributeMethods
+      extend Queryable
 
       attr_reader :id, :text, :name, :count, :always
 
@@ -13,9 +16,7 @@ module Readyset
       #
       # @return [Array<CachedQuery>]
       def self.all
-        Readyset.raw_query('SHOW CACHES').map do |result|
-          from_readyset_result(**result.symbolize_keys)
-        end
+        super('SHOW CACHES')
       end
 
       # Drops all the caches that exist on ReadySet.
@@ -36,7 +37,7 @@ module Readyset
       # @raise [Readyset::Query::NotFoundError] raised if a cached query with the given ID cannot be
       # found
       def self.find(id)
-        from_readyset_result(**Query.find_inner('SHOW CACHES WHERE query_id = ?', id))
+        super('SHOW CACHES WHERE query_id = ?', id)
       end
 
       # Constructs a new `CachedQuery` from the given attributes.
@@ -60,7 +61,8 @@ module Readyset
         id == other.id &&
           text == other.text &&
           name == other.name &&
-          always == other.always
+          always == other.always &&
+          count == other.count
       end
 
       # Returns false if the cached query supports falling back to the upstream database and true

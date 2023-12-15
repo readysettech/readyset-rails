@@ -1,12 +1,14 @@
 require 'active_model'
 
 require 'readyset/query'
+require 'readyset/query/queryable'
 
 module Readyset
   module Query
     # Represents an uncached query that has been proxied by ReadySet.
     class ProxiedQuery
       include ActiveModel::AttributeMethods
+      extend Queryable
 
       # An error raised when a `ProxiedQuery` is expected to be supported but isn't.
       class UnsupportedError < Query::BaseError
@@ -22,8 +24,7 @@ module Readyset
       #
       # @return [Array<ProxiedQuery>]
       def self.all
-        Readyset.raw_query('SHOW PROXIED QUERIES').
-          map { |result| from_readyset_result(**result.symbolize_keys) }
+        super('SHOW PROXIED QUERIES')
       end
 
       # Creates a cache for every proxied query that is not already cached.
@@ -46,7 +47,7 @@ module Readyset
       # @raise [Readyset::Query::NotFoundError] raised if a proxied query with the given
       # ID cannot be found
       def self.find(id)
-        from_readyset_result(**Query.find_inner('SHOW PROXIED QUERIES WHERE query_id = ?', id))
+        super('SHOW PROXIED QUERIES WHERE query_id = ?', id)
       end
 
       # Constructs a new `ProxiedQuery` from the given attributes.
@@ -61,7 +62,7 @@ module Readyset
         @count = count
       end
 
-      # Checks two queries for equality by comparing all of their attributes.
+      # Checks two proxied queries for equality by comparing all of their attributes.
       #
       # @param [ProxiedQuery] the query against which `self` should be compared
       # @return [Boolean]

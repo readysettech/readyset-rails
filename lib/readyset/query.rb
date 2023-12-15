@@ -19,15 +19,5 @@ module Readyset
         "Query not found for ID #{id}"
       end
     end
-
-    def self.find_inner(query, id) # :nodoc:
-      result = Readyset.raw_query(query, id).first
-
-      if result.nil?
-        raise NotFoundError, id
-      else
-        result.to_h.symbolize_keys
-      end
-    end
   end
 end
