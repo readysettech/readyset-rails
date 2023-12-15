@@ -13,10 +13,6 @@ module Readyset
     @configuration ||= Configuration.new
   end
 
-  def self.current_configuration
-    configuration.inspect
-  end
-
   class << self
     alias_method :config, :configuration
     alias_method :current_config, :current_configuration
