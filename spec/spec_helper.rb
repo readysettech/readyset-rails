@@ -7,7 +7,6 @@ require 'combustion'
 require 'factory_bot'
 require 'readyset'
 require_relative 'shared_examples'
-
 Combustion.initialize! :action_controller, :active_record do
   config.eager_load = true
 end
