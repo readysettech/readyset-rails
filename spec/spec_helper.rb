@@ -11,6 +11,11 @@ require 'timecop'
 require_relative 'shared_examples'
 
 Combustion.initialize! :action_controller, :active_record, database_reset: false
+Combustion.initialize! :action_controller, :active_record, database_reset: false do
+  config.active_record.query_log_tags_enabled = true
+  config.active_record.query_log_tags << :readyset_query
+  config.verbose_query_logs = true
+end
 
 require 'readyset'
 
