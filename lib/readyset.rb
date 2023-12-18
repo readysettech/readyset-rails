@@ -3,6 +3,7 @@
 require 'readyset/configuration'
 require 'readyset/controller_extension'
 require 'readyset/query'
+require 'readyset/query_annotator'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
 
@@ -14,7 +15,8 @@ module Readyset
   end
 
   def self.configure
-    yield(configuration)
+    yield(@configuration)
+    prepend QueryAnnotator if configuration.query_annotations
   end
 
   # Creates a new cache on ReadySet using the given ReadySet query ID or SQL query. Exactly one of
