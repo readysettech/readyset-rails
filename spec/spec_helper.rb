@@ -9,6 +9,9 @@ require 'readyset'
 require_relative 'shared_examples'
 
 Combustion.initialize! :action_controller, :active_record do
+  config.active_record.query_log_tags_enabled = true
+  config.active_record.query_log_tags << :readyset_query
+  config.verbose_query_logs = true
   config.eager_load = true
 end
 
