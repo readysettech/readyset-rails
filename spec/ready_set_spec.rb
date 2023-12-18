@@ -325,5 +325,49 @@ RSpec.describe Readyset do
         expect(proxied_queries).to be_empty
       end
     end
+    describe '.route' do
+      before do
+        allow(ActiveRecord::QueryLogs).to receive(:tags).and_return([])
+        allow(ActiveRecord::QueryLogs).to receive(:prepend_comment).and_return(true)
+      end
+
+      it 'annotates queries with "routed to ReadySet" tag when query_annotations is enabled' do
+        # Setup
+        Readyset.configure do |config|
+          config.query_annotations = true
+        end
+
+        log = StringIO.new
+        ActiveRecord::Base.logger = Logger.new(STDOUT)
+
+        query = Cat.where(id: 1)
+        # Exercise
+        Readyset.route { ActiveRecord::Base.connection.execute(query.to_sql) }
+
+        # Verify
+        expect(log.read).to include('/* routed to ReadySet */')
+
+        # Teardown
+        ActiveRecord::Base.logger = nil
+      end
+
+      it 'does not annotate queries when query_annotations is disabled' do
+        # Setup
+        allow(Readyset.configuration).to receive(:query_annotations).and_return(false)
+        log = StringIO.new
+        ActiveRecord::Base.logger = Logger.new(STDOUT)
+
+        query = Cat.where(id: 1)
+
+        # Exercise
+        Readyset.route { ActiveRecord::Base.connection.execute(query.to_sql) }
+
+        # Verify
+        expect(log.string).not_to include('/* routed to ReadySet */')
+
+        # Teardown
+        ActiveRecord::Base.logger = nil
+      end
+    end
   end
 end
