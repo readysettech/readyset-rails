@@ -31,15 +31,4 @@ RSpec.describe Readyset::Configuration do
       end
     end
   end
-
-  describe 'query_annotations configuration' do
-    it 'is disabled by default' do
-      expect(config.query_annotations).to eq(false)
-    end
-
-    it 'can be enabled' do
-      config.query_annotations = true
-      expect(config.query_annotations).to eq(true)
-    end
-  end
 end
