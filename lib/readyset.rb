@@ -6,8 +6,10 @@ require 'readyset/query'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
 
-# The Readyset module provides functionality to integrate ReadySet caching with Ruby on Rails applications.
-# It offers methods to configure and manage ReadySet caches, as well as to route database queries through ReadySet.
+# The Readyset module provides functionality to integrate ReadySet caching
+# with Ruby on Rails applications.
+# It offers methods to configure and manage ReadySet caches,
+# as well as to route database queries through ReadySet.
 module Readyset
   # Sets the configuration for Readyset.
   # @!attribute [w] configuration
@@ -34,7 +36,8 @@ module Readyset
   # @param id [String] the ReadySet query ID of the query from which a cache should be created.
   # @param sql [String] the SQL string from which a cache should be created.
   # @param name [String] the name for the cache being created.
-  # @param always [Boolean] whether the cache should always be used; queries to these caches will never fall back to the database if this is true.
+  # @param always [Boolean] whether the cache should always be used;
+  # queries to these caches will never fall back to the database if this is true.
   # @return [void]
   # @raise [ArgumentError] raised if exactly one of the `id` or `sql` arguments was not provided.
   def self.create_cache!(id: nil, sql: nil, name: nil, always: false)
@@ -59,10 +62,10 @@ module Readyset
   end
 
   # Drops an existing cache on ReadySet using the given SQL query or ReadySet query ID.
-  # @param name_or_id [String] the name or the ReadySet query ID of the cache that should be dropped.
+  # @param name_or_id [String] the name or ReadySet query ID of the cache that should be dropped.
   # @param sql [String] a SQL string for a query whose associated cache should be dropped.
   # @return [void]
-  # @raise [ArgumentError] raised if exactly one of the `name_or_id` or `sql` arguments was not provided.
+  # @raise [ArgumentError] if exactly one of the `name_or_id` or `sql` arguments was not provided.
   def self.drop_cache!(name_or_id: nil, sql: nil)
     if (sql.nil? && name_or_id.nil?) || (!sql.nil? && !name_or_id.nil?)
       raise ArgumentError, 'Exactly one of the `name_or_id` and `sql` parameters must be provided'
@@ -88,16 +91,17 @@ module Readyset
   end
 
   # Routes to ReadySet any queries that occur in the given block.
-  # @param prevent_writes [Boolean] if true, prevents writes from being executed on the connection to ReadySet.
+  # @param prevent_writes [Boolean] if true, prevents writes from being executed on
+  # the connection to ReadySet.
   # @yield a block whose queries should be routed to ReadySet.
   # @return the value of the last line of the block.
   def self.route(prevent_writes: true, &block)
     if prevent_writes
       ActiveRecord::Base.connected_to(role: reading_role, shard: shard, prevent_writes: true,
-&block)
+        &block)
     else
       ActiveRecord::Base.connected_to(role: writing_role, shard: shard, prevent_writes: false,
-&block)
+        &block)
     end
   end
 
