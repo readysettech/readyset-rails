@@ -15,7 +15,7 @@ module Readyset
   end
 
   def self.configure
-    yield(@configuration)
+    yield(configuration)
   end
 
   # Creates a new cache on ReadySet using the given ReadySet query ID or SQL query. Exactly one of
@@ -35,27 +35,18 @@ module Readyset
       raise ArgumentError, 'Exactly one of the `id` and `sql` parameters must be provided'
     end
 
-    query = 'CREATE CACHE '
-    params = []
+    suffix = sql ? '%s' : '?'
+    from = (id || sql)
 
-    if always
-      query += 'ALWAYS '
-    end
-
-    unless name.nil?
-      query += '? '
-      params.push(name)
-    end
-
-    if sql
-      query += 'FROM %s'
-      params.push(sql)
+    if always && name
+      raw_query('CREATE CACHE ALWAYS ? FROM ' + suffix, name, from)
+    elsif always
+      raw_query('CREATE CACHE ALWAYS FROM ' + suffix, from)
+    elsif name
+      raw_query('CREATE CACHE ? FROM ' + suffix, name, from)
     else
-      query += 'FROM ?'
-      params.push(id)
+      raw_query('CREATE CACHE FROM ' + suffix, from)
     end
-
-    raw_query(query, *params)
 
     nil
   end
