@@ -4,6 +4,7 @@ require 'readyset/configuration'
 require 'readyset/controller_extension'
 require 'readyset/model_extension'
 require 'readyset/query'
+require 'readyset/query_annotator'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
 
@@ -98,6 +99,7 @@ module Readyset
   # @yield a block whose queries should be routed to ReadySet
   # @return the value of the last line of the block
   def self.route(prevent_writes: true, &block)
+    QueryAnnotator.routing_to_readyset = true
     if prevent_writes
       ActiveRecord::Base.
         connected_to(role: reading_role, shard: shard, prevent_writes: true, &block)
@@ -105,6 +107,8 @@ module Readyset
       ActiveRecord::Base.
         connected_to(role: writing_role, shard: shard, prevent_writes: false, &block)
     end
+  ensure
+    QueryAnnotator.routing_to_readyset = false
   end
 
   private

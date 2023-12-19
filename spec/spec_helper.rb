@@ -9,6 +9,12 @@ require 'readyset'
 require_relative 'shared_examples'
 
 Combustion.initialize! :action_controller, :active_record do
+  config.active_record.query_log_tags_enabled = true
+  config.active_record.query_log_tags << {
+    routed_to_readyset?: ->(context) do
+      Readyset::QueryAnnotator.routing_to_readyset?
+    end,
+  }
   config.eager_load = true
 end
 
