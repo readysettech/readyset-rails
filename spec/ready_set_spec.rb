@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 RSpec.describe Readyset do
   it 'has a version number' do
@@ -325,48 +325,23 @@ RSpec.describe Readyset do
         expect(proxied_queries).to be_empty
       end
     end
-    describe '.route' do
-      before do
-        allow(ActiveRecord::QueryLogs).to receive(:tags).and_return([])
-        allow(ActiveRecord::QueryLogs).to receive(:prepend_comment).and_return(true)
-      end
 
-      it 'annotates queries with "routed to ReadySet" tag when query_annotations is enabled' do
-        # Setup
-        Readyset.configure do |config|
-          config.query_annotations = true
-        end
-
+    # NOTE: If query tags aren't available, it will annotate anything.
+    # Adding a feature toggle via config would be redundant.
+    context 'when query tags are available' do
+      it 'annotates SQL queries with a "routed to ReadySet" tag' do
+        # Setup - set up custom logger
         log = StringIO.new
-        ActiveRecord::Base.logger = Logger.new(STDOUT)
+        custom_logger = ActiveSupport::Logger.new(log)
+        allow(ActiveRecord::Base).to receive(:logger).and_return(custom_logger)
 
-        query = Cat.where(id: 1)
-        # Exercise
-        Readyset.route { ActiveRecord::Base.connection.execute(query.to_sql) }
+        # Exercise - Run a query to be routed and tagged
+        query = Cat.where(name: 'whiskers')
+        Readyset.route { query }
 
-        # Verify
-        expect(log.read).to include('/* routed to ReadySet */')
-
-        # Teardown
-        ActiveRecord::Base.logger = nil
-      end
-
-      it 'does not annotate queries when query_annotations is disabled' do
-        # Setup
-        allow(Readyset.configuration).to receive(:query_annotations).and_return(false)
-        log = StringIO.new
-        ActiveRecord::Base.logger = Logger.new(STDOUT)
-
-        query = Cat.where(id: 1)
-
-        # Exercise
-        Readyset.route { ActiveRecord::Base.connection.execute(query.to_sql) }
-
-        # Verify
-        expect(log.string).not_to include('/* routed to ReadySet */')
-
-        # Teardown
-        ActiveRecord::Base.logger = nil
+        # Verify - Check if the query log contains the expected annotation
+        log.rewind # To latest log.
+        expect(log.read).to match(/routed_to_readyset\?[:=]true/)
       end
     end
   end

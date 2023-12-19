@@ -29,7 +29,6 @@ module Readyset
 
   def self.configure
     yield(@configuration)
-    prepend QueryAnnotator if configuration.query_annotations
   end
 
   # Creates a new cache on ReadySet using the given ReadySet query ID or SQL query. Exactly one of

@@ -1,18 +1,11 @@
 require 'active_support/concern'
 
 module Readyset
-  module QueryAnnotator
-    extend ActiveSupport::Concern
+  class QueryAnnotator < ActiveSupport::CurrentAttributes
+    attr_writer :routing_to_readyset
 
-    class_methods do
-      def route(prevent_writes: true, &block)
-        if Readyset.configuration.query_annotations
-          ActiveSupport::ExecutionContext.set(readyset_query: 'routed_to_readyset')
-          super
-        else
-          super
-        end
-      end
+    def routing_to_readyset?
+      !!@routing_to_readyset
     end
   end
 end
