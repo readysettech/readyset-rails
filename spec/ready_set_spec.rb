@@ -17,18 +17,6 @@ RSpec.describe Readyset do
     end
   end
 
-  describe '.current_config' do
-    it 'returns a string representation of the current configuration' do
-      expect(Readyset.current_config).to be_a(String)
-    end
-  end
-
-  describe '.current_configuration (alias of .current_config)' do
-    it 'returns the same string as .current_config' do
-      expect(Readyset.current_configuration).to eq(Readyset.current_config)
-    end
-  end
-
   describe '.create_cache!' do
     let(:query) { build(:seen_but_not_cached_query) }
 
