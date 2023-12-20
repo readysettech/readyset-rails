@@ -4,6 +4,8 @@ require 'readyset/configuration'
 require 'readyset/controller_extension'
 require 'readyset/model_extension'
 require 'readyset/query'
+require 'readyset/query/cached_query'
+require 'readyset/query/proxied_query'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
 
