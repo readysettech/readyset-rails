@@ -31,9 +31,9 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'actionpack', '>= 6.1'
-  spec.add_dependency 'activerecord', '>= 6.1'
-  spec.add_dependency 'activesupport', '>= 6.1'
+  spec.add_dependency 'actionpack', '>= 7.1'
+  spec.add_dependency 'activerecord', '>= 7.1'
+  spec.add_dependency 'activesupport', '>= 7.1'
   spec.add_dependency 'rake', '~> 13.0'
 
   spec.add_development_dependency 'combustion', '~> 1.3'

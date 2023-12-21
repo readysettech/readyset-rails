@@ -6,6 +6,14 @@ require 'readyset/configuration'
 
 RSpec.describe Readyset::Configuration do
   let(:config) { described_class.new }
+  # Combustion-dependent url string
+  let(:default_url) { 'sqlite3://:@:/db/combustion_test.sqlite' }
+
+  around do |example|
+    original_env = ENV.to_hash
+    example.run
+    ENV.replace(original_env)
+  end
 
   context 'when no database_url is specified' do
     it 'defaults to dummy url' do
