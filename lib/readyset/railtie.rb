@@ -17,7 +17,6 @@ module Readyset
 
         ActiveRecord::Relation.prepend(Readyset::RelationExtension)
       end
-<<<<<<< variant A
     end
 
     # This Railtie sets up the ReadySet connection pools, which prevents users from needing to
@@ -38,8 +37,21 @@ module Readyset
 
     rake_tasks do
       Dir[File.join(File.dirname(__FILE__), '../tasks/*.rake')].each { |f| load f }
->>>>>>> variant B
-======= end
+    end
+
+    initializer 'readyset.query_annotator' do |app|
+      ActiveSupport.on_load(:after_intialization) do
+        if Rails.configuration.active_record.query_log_tags_enabled
+          Rails.configuration.active_record.query_log_tags ||= []
+          Rails.configuration.active_record.query_log_tags << {
+            routed_to_readyset?: ->(context) do
+              Readyset::QueryAnnotator.routing_to_readyset?
+            end,
+          }
+        else
+          Rails.logger.warn 'Query log tags are either disabled or unavailable.'
+        end
+      end
     end
   end
 end

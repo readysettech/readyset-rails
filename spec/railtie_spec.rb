@@ -1,6 +1,6 @@
 # spec/railtie_spec.rb
 
-require 'rails_helper'
+require 'spec_helper'
 
 RSpec.describe Readyset::Railtie do
   describe 'readyset.action_controller', type: :controller do
@@ -25,6 +25,37 @@ RSpec.describe Readyset::Railtie do
   describe 'readyset.active_record' do
     it 'includes RelationExtension into ActiveRecord::Relation' do
       expect(ActiveRecord::Relation.ancestors).to include(Readyset::RelationExtension)
+    end
+  end
+  describe 'readyset.query_annotator' do
+    context 'when query_log_tags_enabled is true' do
+      before do
+        config = Rails.configuration.active_record
+        allow(config).to receive(:query_log_tags_enabled).and_return(true)
+      end
+
+      it 'adds a query_log_tag for routing to Readyset' do
+        # Exercise
+        # Here we are assuming that Readyset::QueryAnnotator.routing_to_readyset? returns a value
+        allow(Readyset::QueryAnnotator).to receive(:routing_to_readyset?).and_return(true)
+
+        # Verify
+        expect(Rails.configuration.active_record.query_log_tags).to include(
+          a_hash_including(routed_to_readyset?: an_instance_of(Proc))
+        )
+      end
+    end
+
+    xcontext 'when query_log_tags_enabled is false' do
+      before do
+        config = Rails.configuration.active_record
+        allow(config).to receive(:query_log_tags_enabled).and_return(false)
+      end
+
+      it 'logs a warning about query log tags being disabled or unavailable' do
+        allow(Rails.logger).to receive(:warn)
+        expect(Rails.logger).to receive(:warn)
+      end
     end
   end
 
