@@ -343,6 +343,56 @@ RSpec.describe Readyset do
         log.rewind # To latest log.
         expect(log.read).to match(/routed_to_readyset\?[:=]true/)
       end
+
+      # Only annotates ReadySet queries passing through .route
+      context 'when routing queries' do
+        it 'sets routing_to_readyset to true at the beginning of the method' do
+          # Setup - Remember initial state
+          starting_state = Readyset::QueryAnnotator.routing_to_readyset?
+
+          # Exercise - Call the .route method and check the state within the block
+          in_progress_state = nil
+          Readyset.route { in_progress_state = Readyset::QueryAnnotator.routing_to_readyset? }
+
+          # Verify - Check if routing_to_readyset was true inside the block
+          expect(in_progress_state).to eq(true)
+
+          # Teardown - Restore initial state
+          Readyset::QueryAnnotator.routing_to_readyset = starting_state
+        end
+
+        # Without this, all queries in the Rails app
+        # would be annotated as true.
+        it 'sets routing_to_readyset to false at the end of the method' do
+          # Setup - Remember initial state
+          starting_state = Readyset::QueryAnnotator.routing_to_readyset?
+
+          # Exercise - Call the .route method
+          Readyset.route { Cat.where(name: 'whiskers') }
+
+          # Verify - Check if routing_to_readyset was reset to false
+          expect(Readyset::QueryAnnotator.routing_to_readyset?).to eq(false)
+
+          # Teardown - Restore initial state
+          Readyset::QueryAnnotator.routing_to_readyset = starting_state
+        end
+      end
+      context 'when not using .route' do
+        it 'flags #routed_to_readyset? as false' do
+          # Setup - set up custom logger
+          log = StringIO.new
+          custom_logger = ActiveSupport::Logger.new(log)
+          allow(ActiveRecord::Base).to receive(:logger).and_return(custom_logger)
+
+          # Exercise - Run a query to be routed and tagged
+          query = Cat.where(name: 'whiskers')
+
+          ActiveRecord::Base.connection.execute(query.to_sql)
+          # Verify - Check if the query log contains the expected annotation
+          log.rewind # To latest log.
+          expect(log.read).not_to match(/routed_to_readyset\?[:=]true/)
+        end
+      end
     end
   end
 end
