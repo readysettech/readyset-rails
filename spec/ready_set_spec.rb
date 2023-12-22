@@ -7,6 +7,16 @@ RSpec.describe Readyset do
     expect(Readyset::VERSION).not_to be nil
   end
 
+  describe '.configuration' do
+    it 'returns the current configuration object' do
+      expect(Readyset.configuration).to be_an_instance_of(Readyset::Configuration)
+    end
+
+    it 'is aliased as .config' do
+      expect(Readyset.config).to eq(Readyset.configuration)
+    end
+  end
+
   describe '.create_cache!' do
     let(:query) { build(:proxied_query) }
 

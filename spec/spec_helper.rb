@@ -14,6 +14,7 @@ end
 
 # This is a bit of a hack. Combustion doesn't appear to support migrating multiple databases, so we
 # just copy the primary database file to serve as the database for our fake ReadySet instance
+
 primary_db_file = Rails.configuration.database_configuration['test']['primary']['database']
 readyset_db_file = Rails.configuration.database_configuration['test']['readyset']['database']
 FileUtils.cp("spec/internal/#{primary_db_file}", "spec/internal/#{readyset_db_file}")
