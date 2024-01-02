@@ -1,5 +1,6 @@
 # lib/readyset.rb
 
+require 'readyset/caches'
 require 'readyset/configuration'
 require 'readyset/controller_extension'
 require 'readyset/model_extension'
@@ -101,7 +102,7 @@ module Readyset
   # @param sql_array [Array<Object>] the SQL array to be executed against ReadySet.
   # @return [PG::Result] the result of executing the SQL query.
   def self.raw_query(*sql_array) # :nodoc:
-    ActiveRecord::Base.connected_to(role: reading_role, shard: shard, prevent_writes: false) do
+    ActiveRecord::Base.connected_to(role: writing_role, shard: shard, prevent_writes: false) do
       ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
     end
   end

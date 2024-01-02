@@ -46,8 +46,8 @@ RSpec.describe Readyset::Query::ProxiedQuery do
     end
     let(:unsupported_or_pending_queries) do
       [
-        build(:unsupported_query),
-        build(:pending_query),
+        build(:unsupported_proxied_query),
+        build(:pending_proxied_query),
       ]
     end
 
@@ -179,7 +179,7 @@ RSpec.describe Readyset::Query::ProxiedQuery do
     context 'when the query is unsupported' do
       subject { query.cache! }
 
-      let(:query) { build(:unsupported_query) }
+      let(:query) { build(:unsupported_proxied_query) }
 
       it 'raises a ProxiedQuery::UnsupportedError' do
         expect { subject }.to raise_error(Readyset::Query::ProxiedQuery::UnsupportedError)

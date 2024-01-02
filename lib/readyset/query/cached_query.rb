@@ -45,7 +45,7 @@ module Readyset
       # @param [Hash] attributes the attributes from which the `CachedQuery` should be
       # constructed
       # @return [CachedQuery]
-      def initialize(id:, text:, name:, always:, count:)
+      def initialize(id: nil, text:, name: nil, always: nil, count: nil)
         @id = id
         @text = text
         @name = name
