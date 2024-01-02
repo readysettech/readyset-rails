@@ -20,70 +20,45 @@ RSpec.describe Readyset do
   describe '.create_cache!' do
     let(:query) { build(:proxied_query) }
 
-    context 'when given neither a SQL string nor an ID' do
-      subject { Readyset.create_cache! }
+    subject { Readyset.create_cache!(query.id) }
 
-      it 'raises an ArgumentError' do
-        expect { subject }.to raise_error(ArgumentError)
-      end
-    end
-
-    context 'when given both a SQL string and an ID' do
-      subject { Readyset.create_cache!(sql: query.text, id: query.id) }
-
-      it 'raises an ArgumentError' do
-        expect { subject }.to raise_error(ArgumentError)
-      end
-    end
-
-    context 'when given a SQL string but not an ID' do
-      subject { Readyset.create_cache!(sql: query.text) }
-
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
-        let(:args) { [query.text] }
-      end
-    end
-
-    context 'when given an ID but not a SQL string' do
-      subject { Readyset.create_cache!(id: query.id) }
-
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM ?' do
-        let(:args) { [query.id] }
-      end
+    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
+      let(:args) { [query.id] }
     end
 
     context 'when only the "always" parameter is passed' do
-      subject { Readyset.create_cache!(id: query.id, always: true) }
+      subject { Readyset.create_cache!(query.id, always: true) }
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ALWAYS FROM ?' do
+      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ALWAYS FROM %s' do
         let(:args) { [query.id] }
       end
     end
 
     context 'when only the "name" parameter is passed' do
-      subject { Readyset.create_cache!(id: query.id, name: name) }
+      subject { Readyset.create_cache!(query.id, name: name) }
 
       let(:name) { 'test cache' }
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ? FROM ?' do
+      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE %s FROM %s' do
         let(:args) { [name, query.id] }
       end
     end
 
     context 'when both the "always" and "name" parameters are passed' do
-      subject { Readyset.create_cache!(id: query.id, always: true, name: name) }
+      subject { Readyset.create_cache!(query.id, always: true, name: name) }
 
       let(:name) { 'test cache' }
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ALWAYS ? FROM ?' do
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+          'CREATE CACHE ALWAYS %s FROM %s' do
         let(:args) { [name, query.id] }
       end
     end
 
     context 'when neither the "always" nor the "name" parameters are passed' do
-      subject { Readyset.create_cache!(id: query.id) }
+      subject { Readyset.create_cache!(query.id) }
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM ?' do
+      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
         let(:args) { [query.id] }
       end
     end
@@ -92,36 +67,10 @@ RSpec.describe Readyset do
   describe '.drop_cache!' do
     let(:query) { build(:proxied_query) }
 
-    context 'when given neither a SQL string nor an ID' do
-      subject { Readyset.drop_cache! }
+    subject { Readyset.drop_cache!(query.id) }
 
-      it 'raises an ArgumentError' do
-        expect { subject }.to raise_error(ArgumentError)
-      end
-    end
-
-    context 'when given both a SQL string and an ID' do
-      subject { Readyset.drop_cache!(sql: query.text, name_or_id: query.id) }
-
-      it 'raises an ArgumentError' do
-        expect { subject }.to raise_error(ArgumentError)
-      end
-    end
-
-    context 'when given a SQL string but not an ID' do
-      subject { Readyset.drop_cache!(sql: query.text) }
-
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE %s' do
-        let(:args) { [query.text] }
-      end
-    end
-
-    context 'when given an ID but not a SQL string' do
-      subject { Readyset.drop_cache!(name_or_id: query.id) }
-
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE ?' do
-        let(:args) { [query.id] }
-      end
+    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE %s' do
+      let(:args) { [query.id] }
     end
   end
 
