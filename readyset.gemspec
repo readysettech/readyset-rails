@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activerecord', '>= 6.1'
   spec.add_dependency 'activesupport', '>= 6.1'
   spec.add_dependency 'colorize', '~> 1.1'
+  spec.add_dependency 'concurrent-ruby', '~> 1.2'
   spec.add_dependency 'progressbar', '~> 1.13'
   spec.add_dependency 'rake', '~> 13.0'
 
@@ -45,4 +46,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'rspec', '~> 3.2'
   spec.add_development_dependency 'rspec-rails', '~> 6.0'
   spec.add_development_dependency 'rubocop-airbnb'
+  spec.add_development_dependency 'timecop', '~> 0.9'
 end
