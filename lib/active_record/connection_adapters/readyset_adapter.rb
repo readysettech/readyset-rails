@@ -30,8 +30,8 @@ module ActiveRecord
         nil
       end
 
-      def self.method_missing(m, *args, **kwargs, &block)
-        PostgreSQLAdapter.send(m, *args, **kwargs, &block)
+      def self.method_missing(...)
+        PostgreSQLAdapter.send(...)
       rescue => e
         annotate_error(e)
         raise e
@@ -41,8 +41,8 @@ module ActiveRecord
         @inner = pg_conn
       end
 
-      def method_missing(m, *args, **kwargs, &block)
-        @inner.send(m, *args, **kwargs, &block)
+      def method_missing(...)
+        @inner.send(...)
       rescue => e
         self.class.annotate_error(e)
         raise e
