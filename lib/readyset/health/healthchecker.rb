@@ -64,7 +64,7 @@ module Readyset
       attr_reader :healthcheck_interval, :healthchecks, :healthy, :lock, :shard, :window_counter
 
       def build_task
-        task = Concurrent::TimerTask.new(execution_interval: healthcheck_interval) do |t|
+        @task ||= Concurrent::TimerTask.new(execution_interval: healthcheck_interval) do |t|
           if healthchecks.healthy?
             # We disconnect the ReadySet connection pool here to ensure that any pre-existing
             # connections to ReadySet are re-established. This fixes an issue where connections
