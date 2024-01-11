@@ -13,7 +13,7 @@ module Readyset
     initializer 'readyset.active_record' do |app|
       ActiveSupport.on_load(:active_record) do
         ActiveRecord::Base.prepend(Readyset::ModelExtension)
-        ActiveRecord::Base.prepend(ActiveRecord::ReadysetConnectionHandling)
+        ActiveRecord::Base.extend(ActiveRecord::ReadysetConnectionHandling)
 
         ActiveRecord::Relation.prepend(Readyset::RelationExtension)
       end
