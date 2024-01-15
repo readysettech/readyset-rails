@@ -40,8 +40,12 @@ module Readyset
     end
 
     initializer 'readyset.query_annotator' do |app|
-      ActiveSupport.on_load(:after_intialization) do
-        if Rails.configuration.active_record.query_log_tags_enabled
+      setup_query_annotator
+    end
+
+    def setup_query_annotator
+      config.after_initialize do
+        if Rails.env.development?
           Rails.configuration.active_record.query_log_tags ||= []
           Rails.configuration.active_record.query_log_tags << {
             routed_to_readyset?: ->(context) do
@@ -49,7 +53,12 @@ module Readyset
             end,
           }
         else
-          Rails.logger.warn 'Query log tags are either disabled or unavailable.'
+          Rails.logger.warn 'Query log tags are currently disabled.' \
+            'The ReadySet gem uses these tags to display information' \
+            'in the logs about whether a query was routed to ReadySet.' \
+            'It is highly recommended that you enable query log tags by setting' \
+            '`Rails.configuration.active_record.query_log_tags_enabled` to true to' \
+            'verify that queries are being routed to ReadySet as expected.'
         end
       end
     end

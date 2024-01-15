@@ -377,6 +377,7 @@ RSpec.describe Readyset do
           Readyset::QueryAnnotator.routing_to_readyset = starting_state
         end
       end
+
       context 'when not using .route' do
         it 'flags #routed_to_readyset? as false' do
           # Setup - set up custom logger
