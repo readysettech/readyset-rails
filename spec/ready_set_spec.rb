@@ -18,60 +18,62 @@ RSpec.describe Readyset do
   end
 
   describe '.create_cache!' do
-    let(:query) { build(:proxied_query) }
+    context 'when given neither a SQL string nor an ID' do
+      subject { Readyset.create_cache! }
 
-    subject { Readyset.create_cache!(query.id) }
+      it 'raises an ArgumentError' do
+        expect { subject }.to raise_error(ArgumentError)
+      end
+    end
 
-    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
-      let(:args) { [query.id] }
+    context 'when given both a SQL string and an ID' do
+      subject { Readyset.create_cache!(sql: 'SELECT * FROM t WHERE x = 1', id: 'fake_query_id') }
+
+      it 'raises an ArgumentError' do
+        expect { subject }.to raise_error(ArgumentError)
+      end
+    end
+
+    context 'when given a SQL string but not an ID' do
+      subject { Readyset.create_cache!(sql: 'SELECT * FROM t WHERE x = 1') }
+
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+        'CREATE CACHE FROM SELECT * FROM t WHERE x = 1'
+    end
+
+    context 'when given an ID but not a SQL string' do
+      subject { Readyset.create_cache!(id: 'fake_query_id') }
+
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+        'CREATE CACHE FROM "fake_query_id"'
     end
 
     context 'when only the "always" parameter is passed' do
-      subject { Readyset.create_cache!(query.id, always: true) }
+      subject { Readyset.create_cache!(id: 'fake_query_id', always: true) }
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE ALWAYS FROM %s' do
-        let(:args) { [query.id] }
-      end
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+        'CREATE CACHE ALWAYS FROM "fake_query_id"'
     end
 
     context 'when only the "name" parameter is passed' do
-      subject { Readyset.create_cache!(query.id, name: name) }
+      subject { Readyset.create_cache!(id: 'fake_query_id', name: 'test_cache') }
 
-      let(:name) { 'test cache' }
-
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE %s FROM %s' do
-        let(:args) { [name, query.id] }
-      end
+      it_behaves_like 'a wrapper around a ReadySet SQL extension',
+        'CREATE CACHE "test_cache" FROM "fake_query_id"'
     end
 
     context 'when both the "always" and "name" parameters are passed' do
-      subject { Readyset.create_cache!(query.id, always: true, name: name) }
-
-      let(:name) { 'test cache' }
+      subject { Readyset.create_cache!(id: 'fake_query_id', always: true, name: 'test_cache') }
 
       it_behaves_like 'a wrapper around a ReadySet SQL extension',
-          'CREATE CACHE ALWAYS %s FROM %s' do
-        let(:args) { [name, query.id] }
-      end
-    end
-
-    context 'when neither the "always" nor the "name" parameters are passed' do
-      subject { Readyset.create_cache!(query.id) }
-
-      it_behaves_like 'a wrapper around a ReadySet SQL extension', 'CREATE CACHE FROM %s' do
-        let(:args) { [query.id] }
-      end
+        'CREATE CACHE ALWAYS "test_cache" FROM "fake_query_id"'
     end
   end
 
   describe '.drop_cache!' do
-    let(:query) { build(:proxied_query) }
+    subject { Readyset.drop_cache!('query_name') }
 
-    subject { Readyset.drop_cache!(query.id) }
-
-    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE %s' do
-      let(:args) { [query.id] }
-    end
+    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE "query_name"'
   end
 
   describe '.raw_query' do

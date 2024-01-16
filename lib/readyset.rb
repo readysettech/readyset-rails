@@ -36,30 +36,48 @@ module Readyset
   end
 
   # Creates a new cache on ReadySet using the given ReadySet query ID or SQL query.
-  # @param id_or_sql [String] the query ID or SQL string from which a cache should be created.
+  # @param id [String] the ReadySet query ID of the query from which a cache should be created.
+  # @param sql [String] the SQL string from which a cache should be created.
   # @param name [String] the name for the cache being created.
   # @param always [Boolean] whether the cache should always be used;
   # queries to these caches will never fall back to the database if this is true.
   # @return [void]
-  def self.create_cache!(id_or_sql, name: nil, always: false)
+  # @raise [ArgumentError] raised if exactly one of the `id` or `sql` arguments was not provided.
+  def self.create_cache!(id: nil, sql: nil, name: nil, always: false)
+    if (sql.nil? && id.nil?) || (!sql.nil? && !id.nil?)
+      raise ArgumentError, 'Exactly one of the `id` and `sql` parameters must be provided'
+    end
+
+    connection = Readyset.route { ActiveRecord::Base.connection }
+    from =
+      if sql
+        sql
+      else
+        connection.quote_column_name(id)
+      end
+
     if always && name
-      raw_query('CREATE CACHE ALWAYS %s FROM %s', name, id_or_sql)
+      quoted_name = connection.quote_column_name(name)
+      raw_query("CREATE CACHE ALWAYS #{quoted_name} FROM #{from}")
     elsif always
-      raw_query('CREATE CACHE ALWAYS FROM %s', id_or_sql)
+      raw_query("CREATE CACHE ALWAYS FROM #{from}")
     elsif name
-      raw_query('CREATE CACHE %s FROM %s', name, id_or_sql)
+      quoted_name = connection.quote_column_name(name)
+      raw_query("CREATE CACHE #{quoted_name} FROM #{from}")
     else
-      raw_query('CREATE CACHE FROM %s', id_or_sql)
+      raw_query("CREATE CACHE FROM #{from}")
     end
 
     nil
   end
 
-  # Drops an existing cache on ReadySet.
-  # @param query_identifier [String] the name of the cache that should be dropped
+  # Drops an existing cache on ReadySet using the given query name.
+  # @param name [String] the name of the cache that should be dropped.
   # @return [void]
-  def self.drop_cache!(query_identifier)
-    raw_query('DROP CACHE %s', query_identifier)
+  def self.drop_cache!(name)
+    connection = Readyset.route { ActiveRecord::Base.connection }
+    quoted_name = connection.quote_column_name(name)
+    raw_query("DROP CACHE #{quoted_name}")
 
     nil
   end
