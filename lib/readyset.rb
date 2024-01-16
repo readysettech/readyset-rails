@@ -10,6 +10,8 @@ require 'readyset/query/cached_query'
 require 'readyset/query/proxied_query'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
+require 'readyset/status'
+require 'readyset/table'
 
 # The Readyset module provides functionality to integrate ReadySet caching
 # with Ruby on Rails applications.
