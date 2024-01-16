@@ -43,9 +43,9 @@ module Readyset
     # @param other [Readyset::Table] the table to which `self` should be compared
     # @return [Boolean]
     def ==(other) # :nodoc:
-      self.name == other.name &&
-        self.description == other.description &&
-        self.status == other.status
+      name == other.name &&
+        description == other.description &&
+        status == other.status
     end
 
     private

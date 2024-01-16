@@ -19,9 +19,9 @@ module Readyset
     end
 
     def initialize(connection_count:, controller_status:, database_connection_status:,
-        last_completed_snapshot:, last_replicator_error:, last_started_controller:,
-        last_started_replication:, minimum_replication_offset:, maximum_replication_offset:,
-        snapshot_status:) # :nodoc:
+                   last_completed_snapshot:, last_replicator_error:, last_started_controller:,
+                   last_started_replication:, minimum_replication_offset:,
+                   maximum_replication_offset:, snapshot_status:) # :nodoc:
       @connection_count = connection_count
       @database_connection_status = database_connection_status
       @last_completed_snapshot = last_completed_snapshot
@@ -41,11 +41,13 @@ module Readyset
 
       new(
         connection_count: attributes['Connection Count'].to_i,
-        database_connection_status: attributes['Database Connection'].downcase.gsub(' ', '_').to_sym,
+        database_connection_status:
+          attributes['Database Connection'].downcase.gsub(' ', '_').to_sym,
         last_completed_snapshot: parse_timestamp_if_not_nil(attributes['Last completed snapshot']),
         last_replicator_error: attributes['Last replicator error'],
         last_started_controller: parse_timestamp_if_not_nil(attributes['Last started Controller']),
-        last_started_replication: parse_timestamp_if_not_nil(attributes['Last started replication']),
+        last_started_replication:
+          parse_timestamp_if_not_nil(attributes['Last started replication']),
         minimum_replication_offset: attributes['Minimum Replication Offset'],
         maximum_replication_offset: attributes['Maximum Replication Offset'],
         controller_status: attributes['ReadySet Controller Status'],

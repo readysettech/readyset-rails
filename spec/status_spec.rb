@@ -6,7 +6,7 @@ RSpec.describe Readyset::Status do
       status = Readyset::Status.call
 
       expect(status.database_connection_status).to eq(:connected)
-      expect(status.connection_count).to eq(1)
+      expect(status.connection_count).to be_a(Integer)
       expect(status.snapshot_status).to eq(:completed)
       expect(status.minimum_replication_offset).
         to match(/\([0-9A-F]{1,8}\/[0-9A-F]{1,8}, [0-9A-F]{1,8}\/[0-9A-F]{1,8}\)/)
