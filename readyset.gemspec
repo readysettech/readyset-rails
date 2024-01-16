@@ -12,7 +12,7 @@ Gem::Specification.new do |spec|
                  'SQL cache.'
   spec.description = 'This gem provides a Rails adapter to the ReadySet SQL cache.'
   spec.homepage = 'https://readyset.io'
-  spec.required_ruby_version = '>= 2.7.0'
+  spec.required_ruby_version = '>= 3.0'
 
   spec.metadata['allowed_push_host'] = "TODO: Set to your gem server 'https://example.com'"
 
