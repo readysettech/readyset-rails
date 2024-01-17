@@ -117,17 +117,16 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    end
    ```
 3. Start up your application and drive traffic through the part of your
-   application that invokes the query you routed in the previous step. Your
-   application's logs will show you whether the query was routed to ReadySet:
+   application that invokes the query you routed in the previous step
 4. Validate that the query was routed to ReadySet by running
    `rails readyset:queries:proxied`. A "proxied" query is one that was served
    by ReadySet but was proxied to your primary database, since a cache for the
-   query does not yet exist.
+   query does not yet exist
 5. Create a cache for the query by running
    `rails readyset:queries:cache_all_supported`. This will create caches for
    all of the queries proxied by ReadySet that are supported to be cached. You
    can verify that the expected caches were created by running
-   `rails readyset:caches`.
+   `rails readyset:caches`
 6. Drive traffic through the part of your application that invokes your cached
    query. The first invocation of the query will be a cache miss, but the
    second will be served from the cache. You can verify that the cache was
