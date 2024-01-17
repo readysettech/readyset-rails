@@ -13,3 +13,5 @@ Gemfile.lock
 spec/internal/tmp/
 spec/internal/config/storage.yml
 spec/internal/db/*.sqlite
+spec/internal/db/*.sqlite-shm
+spec/internal/db/*.sqlite-wal
