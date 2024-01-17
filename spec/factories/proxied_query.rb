@@ -6,11 +6,11 @@ FactoryBot.define do
     text { 'SELECT * FROM "t" WHERE ("x" = $1)' }
     supported { :yes }
 
-    factory :pending_query do
+    factory :pending_proxied_query do
       supported { :pending }
     end
 
-    factory :unsupported_query do
+    factory :unsupported_proxied_query do
       id { 'q_f9bfc11a043b2f75' }
       text { 'SHOW TIME ZONE' }
       supported { :unsupported }

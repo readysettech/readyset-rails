@@ -76,6 +76,26 @@ RSpec.describe Readyset do
     it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE "query_name"'
   end
 
+  describe '.explain' do
+    it 'invokes `Explain.call` with the given query' do
+      explain = build(:explain)
+      allow(Readyset::Explain).to receive(:call).with(explain.text).and_return(explain)
+
+      Readyset.explain(explain.text)
+
+      expect(Readyset::Explain).to have_received(:call).with(explain.text)
+    end
+
+    it 'returns a `Explain`' do
+      explain = build(:explain)
+      allow(Readyset::Explain).to receive(:call).with(explain.text).and_return(explain)
+
+      result = Readyset.explain(explain.text)
+
+      expect(result).to eq(explain)
+    end
+  end
+
   describe '.raw_query' do
     subject { Readyset.raw_query(*query) }
 
