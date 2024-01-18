@@ -1,8 +1,15 @@
+default: &default
+  database: testdb
+  username: postgres
+  password: readyset
+  adapter: postgresql
+  host: "127.0.0.1"
+
 test:
   primary:
-    adapter:  sqlite3
-    database: db/combustion_test.sqlite
+    <<: *default
+    port: 5432
   readyset:
-    adapter:  sqlite3
-    database: db/combustion_test_readyset.sqlite
+    <<: *default
+    port: 5433
 

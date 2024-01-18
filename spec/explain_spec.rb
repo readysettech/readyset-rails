@@ -6,13 +6,6 @@ RSpec.describe Readyset::Explain do
   describe '.call' do
     it 'retrieves the explain information from ReadySet' do
       explain = build(:explain)
-      raw_result = {
-        :'query id' => explain.id,
-        :'readyset supported' => explain.supported,
-        query: explain.text,
-      }
-      allow(Readyset).to receive(:raw_query).with('EXPLAIN CREATE CACHE FROM %s', explain.text).
-        and_return([raw_result])
 
       result = Readyset::Explain.call(explain.text)
 

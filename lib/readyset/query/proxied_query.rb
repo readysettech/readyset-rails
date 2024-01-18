@@ -38,6 +38,11 @@ module Readyset
           map { |query| query.cache!(always: always) }
       end
 
+      # Clears the list of proxied queries on ReadySet.
+      def self.drop_all!
+        Readyset.raw_query('DROP ALL PROXIED QUERIES')
+      end
+
       # Returns the proxied query with the given query ID. The query is searched for by directly
       # querying ReadySet. If a proxied query with the given ID doesn't exist, this method raises a
       # `Readyset::Query::NotFoundError`.
@@ -69,8 +74,7 @@ module Readyset
       def ==(other)
         id == other.id &&
           text == other.text &&
-          supported == other.supported &&
-          count == other.count
+          supported == other.supported
       end
 
       # Creates a cache on ReadySet for this query.

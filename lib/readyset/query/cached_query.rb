@@ -61,8 +61,7 @@ module Readyset
         id == other.id &&
           text == other.text &&
           name == other.name &&
-          always == other.always &&
-          count == other.count
+          always == other.always
       end
 
       # Returns false if the cached query supports falling back to the upstream database and true
@@ -77,8 +76,8 @@ module Readyset
       #
       # @return [void]
       def drop!
-        Readyset.drop_cache!(name_or_id: id)
-        ProxiedQuery.find(id: id)
+        Readyset.drop_cache!(name)
+        ProxiedQuery.find(id)
       end
 
       private

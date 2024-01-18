@@ -36,12 +36,9 @@ RSpec.describe Readyset::ModelExtension do
       let(:body) { ->(name) { Cat.where(name: name) } }
 
       before do
-        # Add a few records to the database that is acting as our fake ReadySet instance
-        Readyset.route(prevent_writes: false) do
-          Cat.create!(name: 'whiskers')
-          Cat.create!(name: 'fluffy')
-          Cat.create!(name: 'tails')
-        end
+        Cat.create(name: 'whiskers')
+        Cat.create(name: 'fluffy')
+        Cat.create(name: 'tails')
 
         subject
       end
@@ -51,7 +48,10 @@ RSpec.describe Readyset::ModelExtension do
       end
 
       it 'defines a method that returns query results from ReadySet' do
+        expect(Readyset).to receive(:route).and_call_original
+
         results = Cat.find_by_name_cached('whiskers')
+
         expect(results.size).to eq(1)
         expect(results.first.name).to eq('whiskers')
       end

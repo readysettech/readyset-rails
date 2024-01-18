@@ -4,137 +4,114 @@ require 'spec_helper'
 
 RSpec.describe Readyset::Query::CachedQuery do
   describe '.all' do
-    subject { Readyset::Query::CachedQuery.all }
+    it 'returns the existing caches' do
+      cache = build_and_create_cache(:cached_query)
 
-    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'SHOW CACHES' do
-      let(:query) { build(:cached_query) }
-      let(:raw_query_result) do
-        [
-          {
-            'query id' => query.id,
-            'query text' => query.text,
-            'fallback behavior' => 'fallback allowed',
-            'cache name' => query.name,
-            'count' => query.count.to_s,
-          },
-        ]
-      end
-      let(:expected_output) { [query] }
+      caches = Readyset::Query::CachedQuery.all
+
+      expect(caches).to eq([cache])
     end
   end
 
   describe '.drop_all!' do
-    subject { Readyset::Query::CachedQuery.drop_all! }
+    it 'drops all the caches on ReadySet' do
+      build_and_create_cache(:cached_query)
+      build_and_create_cache(:cached_query_2)
 
-    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP ALL CACHES'
+      size_before_drop = Readyset::Query::CachedQuery.all.size
+      Readyset::Query::CachedQuery.drop_all!
+      size_after_drop = Readyset::Query::CachedQuery.all.size
+
+      expect(size_before_drop).to eq(2)
+      expect(size_after_drop).to eq(0)
+    end
   end
 
   describe '.find' do
-    subject { Readyset::Query::CachedQuery.find(query_id) }
-
     context 'when a cached query with the given ID exists' do
-      let(:query) { build(:cached_query) }
-      let(:query_id) { query.id }
+      it 'returns the expected cache' do
+        expected_cache = build_and_create_cache(:cached_query)
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-          'SHOW CACHES WHERE query_id = ?' do
-        let(:args) { query_id }
-        let(:raw_query_result) do
-          [
-            {
-              'query id' => query.id,
-              'query text' => query.text,
-              'fallback behavior' => 'fallback allowed',
-              'cache name' => query.name,
-              'count' => query.count.to_s,
-            },
-          ]
-        end
-        let(:expected_output) { query }
+        result = Readyset::Query::CachedQuery.find(expected_cache.id)
+
+        expect(expected_cache).to eq(result)
       end
     end
 
     context 'when a cached query with the given ID does not exist' do
-      let(:query_id) { 'fake query id' }
-
-      before do
-        allow(Readyset).
-          to receive(:raw_query).
-          with('SHOW CACHES WHERE query_id = ?', query_id).
-          and_raise(Readyset::Query::NotFoundError.new(query_id))
-
-        begin
-          subject
-        rescue Readyset::Query::NotFoundError
-          nil
-        end
-      end
-
-      it 'invokes "SHOW CACHES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW CACHES WHERE query_id = ?', query_id)
-      end
-
       it 'raises a Readyset::Query::NotFoundError' do
-        expect { subject }.to raise_error(Readyset::Query::NotFoundError)
+        cache = build(:cached_query)
+
+        expect { Readyset::Query::CachedQuery.find(cache.id) }.
+          to raise_error(Readyset::Query::NotFoundError)
       end
     end
   end
 
   describe '.new' do
-    subject { Readyset::Query::CachedQuery.new(**attrs) }
-
-    let(:attrs) { attributes_for(:cached_query) }
-
     it "assigns the object's attributes correctly" do
-      expect(subject.id).to eq('q_eafb620c78f5b9ac')
-      expect(subject.always).to eq(false)
-      expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
-      expect(subject.name).to eq('q_eafb620c78f5b9ac')
-      expect(subject.count).to eq(5)
+      attrs = attributes_for(:cached_query)
+      cache = Readyset::Query::CachedQuery.new(**attrs)
+
+      expect(cache.id).to eq('q_4f3fb9ad8f73bc0c')
+      expect(cache.always).to eq(false)
+
+      expected_query =
+        <<~SQL.chomp
+          SELECT
+            "public"."cats"."breed"
+          FROM
+            "public"."cats"
+          WHERE
+            ("public"."cats"."name" = $1)
+        SQL
+      expect(cache.text).to eq(expected_query)
+
+      expect(cache.name).to eq('q_4f3fb9ad8f73bc0c')
+      expect(cache.count).to eq(0)
     end
   end
 
   describe '#always?' do
-    subject { query.always? }
-
     context 'when the query supports fallback' do
-      let(:query) { build(:cached_query) }
-
       it 'returns false' do
-        is_expected.to eq(false)
+        cache = build(:cached_query, always: false)
+
+        result = cache.always?
+
+        expect(result).to eq(false)
       end
     end
 
     context 'when the query does not support fallback' do
-      let(:query) { build(:cached_query, always: true) }
-
       it 'returns true' do
-        is_expected.to eq(true)
+        cache = build(:cached_query, always: true)
+
+        result = cache.always?
+
+        expect(result).to eq(true)
       end
     end
   end
 
   describe '#drop!' do
-    subject { query.drop! }
+    it 'drops the cache on ReadySet' do
+      cache = build_and_create_cache(:cached_query)
 
-    let(:query) { build(:cached_query) }
+      size_before_drop = Readyset::Query::CachedQuery.all.size
+      cache.drop!
+      size_after_drop = Readyset::Query::CachedQuery.all.size
 
-    before do
-      allow(Readyset::Query::ProxiedQuery).to receive(:find).with(id: query.id).
-        and_return(build(:proxied_query))
-      allow(Readyset).to receive(:drop_cache!).with(name_or_id: query.id)
-
-      subject
-    end
-
-    it 'invokes Readyset.drop_cache!' do
-      expect(Readyset).to have_received(:drop_cache!).with(name_or_id: query.id)
+      expect(size_before_drop).to eq(1)
+      expect(size_after_drop).to eq(0)
     end
 
     it 'returns the newly-proxied query' do
-      is_expected.to eq(build(:proxied_query))
+      cache = build_and_create_cache(:cached_query)
+
+      proxied = cache.drop!
+
+      expect(proxied).to eq(build(:proxied_query))
     end
   end
 end
