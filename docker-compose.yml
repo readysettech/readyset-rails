@@ -1,0 +1,54 @@
+services:
+  readyset:
+    image: public.ecr.aws/readyset/readyset:latest-stable
+    platform: linux/amd64
+    ports:
+      # The ReadySet Adapter listen port, i.e. what your application / SQL shell connects to
+      - "5433:5433"
+      # ReadySet Prometheus metrics available at http://localhost:6034/metrics
+      # e.g. curl -X GET http://localhost:6034/metrics
+      - "6034:6034"
+    environment:
+      DEPLOYMENT_ENV: readyset_rails_test
+      DB_DIR: /state
+      QUERY_CACHING: explicit
+      STANDALONE: 'true'
+      DEPLOYMENT: docker_compose_deployment
+      LISTEN_ADDRESS: 0.0.0.0:5433
+      UPSTREAM_DB_URL: postgresql://postgres:readyset@postgres/testdb
+      CONTROLLER_ADDRESS: 0.0.0.0
+    volumes:
+      - "readyset:/state"
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "127.0.0.1:6034/health" ]
+      interval: 2s
+      timeout: 1s
+      retries: 5
+      start_period: 5s
+    depends_on:
+      postgres:
+        condition: service_healthy
+  postgres:
+    image: postgres:14
+    environment:
+      - POSTGRES_PASSWORD=readyset
+      - POSTGRES_DB=testdb
+    ports:
+      # The ReadySet Adapter listen port, i.e. what your application / SQL shell connects to
+      - "5432:5432"
+    expose:
+      - 5432
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=logical"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - postgres:/var/lib/postgresql/data
+volumes:
+  postgres: ~
+  readyset: ~

@@ -1,13 +1,45 @@
 FactoryBot.define do
   factory :proxied_query, class: 'Readyset::Query::ProxiedQuery' do
-    id { 'q_eafb620c78f5b9ac' }
-    count { 5 }
-
-    text { 'SELECT * FROM "t" WHERE ("x" = $1)' }
+    id { 'q_4f3fb9ad8f73bc0c' }
+    count { 0 }
+    text do
+      <<~SQL.chomp
+        SELECT
+          "cats"."breed"
+        FROM
+          "cats"
+        WHERE
+          ("cats"."name" = $1)
+      SQL
+    end
     supported { :yes }
 
-    factory :pending_proxied_query do
-      supported { :pending }
+    factory :proxied_query_2 do
+      id { 'q_803a0358269d346d' }
+      text do
+        <<~SQL.chomp
+          SELECT
+            "cats"."name"
+          FROM
+            "cats"
+          WHERE
+            ("cats"."breed" = $1)
+        SQL
+      end
+    end
+
+    factory :proxied_query_3 do
+      id { 'q_803a0358269d346d' }
+      text do
+        <<~SQL.chomp
+          SELECT
+            COUNT(*)
+          FROM
+            "cats"
+          WHERE
+            ("cats"."breed" = $1)
+        SQL
+      end
     end
 
     factory :unsupported_proxied_query do

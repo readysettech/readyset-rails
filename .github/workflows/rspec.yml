@@ -9,7 +9,6 @@ on:
 
 jobs:
   rspec:
-
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,5 +21,9 @@ jobs:
       with:
         ruby-version: ${{ matrix.ruby-version }}
         bundler-cache: true
+
+    - name: Start Docker images
+      run: docker-compose -f docker-compose.yml up -d
+
     - name: Run tests
       run: bundle exec rspec

@@ -10,21 +10,11 @@ module Readyset
       # the queries issued to do the eager loading will not have caches created. Those queries must
       # have their caches created separately.
       #
+      # @param always [Boolean] whether the queries to this cache should always be served by
+      #                         ReadySet, preventing fallback to the uptream database
       # @return [void]
-      def create_readyset_cache!
-        Readyset.create_cache!(sql: to_sql)
-      end
-
-      # Drops the cache on ReadySet associated with this query. This method is a no-op if a cache
-      # for the query already doesn't exist.
-      #
-      # NOTE: If the ActiveRecord query eager loads associations (e.g. via `#includes`), the
-      # the queries issued to do the eager loading will not have caches dropped. Those queries must
-      # have their caches dropped separately.
-      #
-      # @return [void]
-      def drop_readyset_cache!
-        Readyset.drop_cache!(sql: to_sql)
+      def create_readyset_cache!(always: false)
+        Readyset.create_cache!(to_sql, always: always)
       end
 
       # Gets information about this query from ReadySet, including the query's ID, the normalized

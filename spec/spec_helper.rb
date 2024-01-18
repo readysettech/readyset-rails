@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'pry'
 require 'bundler/setup'
 Bundler.setup
 
@@ -8,16 +9,9 @@ require 'factory_bot'
 require 'readyset'
 require_relative 'shared_examples'
 
-Combustion.initialize! :action_controller, :active_record do
+Combustion.initialize! :action_controller, :active_record, database_reset: false do
   config.eager_load = true
 end
-
-# This is a bit of a hack. Combustion doesn't appear to support migrating multiple databases, so we
-# just copy the primary database file to serve as the database for our fake ReadySet instance
-
-primary_db_file = Rails.configuration.database_configuration['test']['primary']['database']
-readyset_db_file = Rails.configuration.database_configuration['test']['readyset']['database']
-FileUtils.cp("spec/internal/#{primary_db_file}", "spec/internal/#{readyset_db_file}")
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
@@ -31,7 +25,52 @@ RSpec.configure do |config|
   end
 
   config.include FactoryBot::Syntax::Methods
+
   config.before(:suite) do
     FactoryBot.find_definitions
+
+    loop do
+      completed = Readyset.raw_query('SHOW READYSET STATUS').any? do |row|
+        row['name'] == 'Snapshot Status' && row['value'] == 'Completed'
+      end
+
+      if completed
+        break
+      else
+        sleep(1.second)
+      end
+    end
+  end
+
+  config.before(:each) do
+    Readyset::Query::CachedQuery.drop_all!
+    Readyset::Query::ProxiedQuery.drop_all!
+    ActiveRecord::Base.connection.execute('TRUNCATE cats RESTART IDENTITY')
+  end
+end
+
+def build_and_create_cache(cache, **kwargs)
+  cache = build(cache, **kwargs)
+
+  text = cache.text.gsub('"public".', '')
+  Readyset.create_cache!(sql: text, always: cache.always, name: cache.name)
+  cache
+end
+
+def build_and_execute_proxied_query(query, **kwargs)
+  build(query, **kwargs).tap do |q|
+    Readyset.raw_query(q.text.gsub('$1', "'test'"))
+  end
+end
+
+def eventually(attempts: 40, sleep: 0.5.seconds)
+  attempts.times do
+    if yield
+      break
+    else
+      sleep(sleep)
+    end
+  rescue StandardError
+    sleep(sleep)
   end
 end

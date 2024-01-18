@@ -4,208 +4,144 @@ require 'spec_helper'
 
 RSpec.describe Readyset::Query::ProxiedQuery do
   describe '.all' do
-    subject { Readyset::Query::ProxiedQuery.all }
+    it 'returns the list of queries that have been proxied by ReadySet' do
+      query = build_and_execute_proxied_query(:proxied_query, supported: :pending)
 
-    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'SHOW PROXIED QUERIES' do
-      let(:query) { build(:proxied_query) }
-      let(:raw_query_result) do
-        [
-          {
-            'query id' => query.id,
-            'proxied query' => query.text,
-            'readyset supported' => query.supported.to_s,
-            'count' => query.count.to_s,
-          },
-        ]
-      end
-      let(:expected_output) { [query] }
+      queries = Readyset::Query::ProxiedQuery.all
+
+      expect(queries).to eq([query])
     end
   end
 
   describe '.cache_all_supported!' do
-    subject { Readyset::Query::ProxiedQuery.cache_all_supported!(always: true) }
-
-    let(:queries) { supported_queries + unsupported_or_pending_queries }
-    let(:cached_query_1) { build(:cached_query, always: true) }
-    let(:cached_query_2) do
-      build(:cached_query,
-            id: 'q_8892818e62c34ecd',
-            text: 'SELECT * FROM "t" WHERE ("y" = $1)',
-            always: true)
-    end
-    let(:supported_queries) do
-      supported_query_1 = build(:proxied_query)
-      allow(supported_query_1).to receive(:cache!).with(always: true).and_return(cached_query_1)
-
-      supported_query_2 = build(:proxied_query,
-                                id: 'q_8892818e62c34ecd',
-                                text: 'SELECT * FROM "t" WHERE ("y" = $1)')
-      allow(supported_query_2).to receive(:cache!).with(always: true).and_return(cached_query_2)
-
-      [supported_query_1, supported_query_2]
-    end
-    let(:unsupported_or_pending_queries) do
-      [
-        build(:unsupported_proxied_query),
-        build(:pending_proxied_query),
-      ]
-    end
-
-    before do
-      unsupported_or_pending_queries.each do |query|
-        allow(query).to receive(:cache!)
-      end
-
-      allow(Readyset::Query::ProxiedQuery).to receive(:all).and_return(queries)
-    end
-
     context 'when every ProxiedQuery#cache! invocation succeeds' do
-      before do
-        subject
-      end
+      it 'creates all the caches on ReadySet' do
+        build_and_execute_proxied_query(:proxied_query)
+        build_and_execute_proxied_query(:proxied_query_2)
 
-      it 'invokes ProxiedQuery#cache! on every supported query with the given "always" ' \
-        'parameter' do
-        supported_queries.each do |query|
-          expect(query).to have_received(:cache!).with(always: true)
+        eventually do
+          Readyset::Query::ProxiedQuery.all.all? { |query| query.supported == :yes }
         end
+
+        results = Readyset::Query::ProxiedQuery.cache_all_supported!
+
+        expected_cached_queries = [build(:cached_query).text, build(:cached_query_2).text].sort
+        cached_queries = results.map(&:text).sort
+        expect(cached_queries).to eq(expected_cached_queries)
       end
 
       it 'does not invoke ProxiedQuery#cache! on any unsupported or pending queries' do
-        unsupported_or_pending_queries.each do |query|
-          expect(query).not_to have_received(:cache!)
+        build_and_execute_proxied_query(:proxied_query)
+        eventually do
+          Readyset::Query::ProxiedQuery.all.all? { |query| query.supported == :yes }
         end
-      end
+        query = build_and_execute_proxied_query(:proxied_query_2, supported: :pending)
 
-      it 'returns the newly-cached queries' do
-        is_expected.to eq([cached_query_1, cached_query_2])
+        cached = Readyset::Query::ProxiedQuery.cache_all_supported!
+        proxied = Readyset::Query::ProxiedQuery.all
+
+        expect(cached).to eq([build(:cached_query)])
+        expect(proxied).to eq([query])
       end
     end
 
     context 'when one of the ProxiedQuery#cache! invocations fails' do
-      before do
-        allow(queries[0]).to receive(:cache!).and_raise(StandardError)
-        allow(queries[1]).to receive(:cache!)
+      it 'raises the error raised by the ProxiedQuery#cache! invocation' do
+        setup
+
+        expect { Readyset::Query::ProxiedQuery.cache_all_supported! }.
+          to raise_error(StandardError)
+      end
+
+      it 'creates caches for the queries in the list up to the query that caused the error' do
+        setup
 
         begin
-          subject
-        rescue StandardError
-          nil
+          Readyset::Query::ProxiedQuery.cache_all_supported!
+        rescue
         end
+
+        cached = Readyset::Query::CachedQuery.all
+        expect(cached).to eq([build(:cached_query)])
       end
 
-      it 'raises the error raised by the ProxiedQuery#cache! invocation' do
-        expect { subject }.to raise_error(StandardError)
-      end
+      def setup
+        query_1 = build_and_execute_proxied_query(:proxied_query)
+        query_2 = build_and_execute_proxied_query(:proxied_query_2)
+        query_3 = build_and_execute_proxied_query(:proxied_query_3)
 
-      it 'invokes ProxiedQuery#cache! on the queries in the list up to and including ' \
-        'the query that caused the error with the given "always" parameter' do
-        expect(queries[0]).to have_received(:cache!).with(always: true)
-      end
-
-      it 'does not invoke ProxiedQuery#cache! on any of the queries in the list after ' \
-        'the query that caused the error' do
-        expect(queries[1]).not_to have_received(:cache!)
+        allow(Readyset::Query::ProxiedQuery).to receive(:all).
+          and_return([query_1, query_2, query_3])
+        allow(query_2).to receive(:cache!).and_raise(StandardError)
       end
     end
   end
 
   describe '.find' do
-    subject { Readyset::Query::ProxiedQuery.find(query_id) }
-
     context 'when a proxied query with the given ID exists' do
-      let(:query) { build(:proxied_query) }
-      let(:query_id) { query.id }
+      it 'returns the proxied query' do
+        expected_query = build_and_execute_proxied_query(:proxied_query, supported: :pending)
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-          'SHOW PROXIED QUERIES WHERE query_id = ?' do
-        let(:args) { [query_id] }
-        let(:raw_query_result) do
-          [
-            {
-              'query id' => query.id,
-              'proxied query' => query.text,
-              'readyset supported' => query.supported.to_s,
-              'count' => query.count.to_s,
-            },
-          ]
-        end
-        let(:expected_output) { query }
+        query = Readyset::Query::ProxiedQuery.find(expected_query.id)
+
+        expect(query).to eq(expected_query)
       end
     end
 
     context 'when a proxied query with the given ID does not exist' do
-      let(:query_id) { 'fake query id' }
-
-      before do
-        allow(Readyset).
-          to receive(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id).
-          and_raise(Readyset::Query::NotFoundError.new(query_id))
-
-        begin
-          subject
-        rescue Readyset::Query::NotFoundError
-          nil
-        end
-      end
-
-      it 'invokes "SHOW PROXIED QUERIES" on Readyset' do
-        expect(Readyset).
-          to have_received(:raw_query).
-          with('SHOW PROXIED QUERIES WHERE query_id = ?', query_id)
-      end
-
-      it 'raises a ProxiedQuery::NotFoundError' do
-        expect { subject }.to raise_error(Readyset::Query::NotFoundError)
+      it 'raises a Readyset::Query::NotFoundError' do
+        expect { Readyset::Query::ProxiedQuery.find(build(:proxied_query).id) }.
+          to raise_error(Readyset::Query::NotFoundError)
       end
     end
   end
 
   describe '.new' do
-    subject { Readyset::Query::ProxiedQuery.new(**attrs) }
-
-    let(:attrs) { attributes_for(:proxied_query) }
-
     it "assigns the object's attributes correctly" do
-      expect(subject.id).to eq('q_eafb620c78f5b9ac')
-      expect(subject.supported).to eq(:yes)
-      expect(subject.count).to eq(5)
-      expect(subject.text).to eq('SELECT * FROM "t" WHERE ("x" = $1)')
+      query = Readyset::Query::ProxiedQuery.new(**attributes_for(:proxied_query))
+
+      expect(query.count).to eq(0)
+      expect(query.id).to eq('q_4f3fb9ad8f73bc0c')
+
+      expected_query =
+        <<~SQL.chomp
+          SELECT
+            "cats"."breed"
+          FROM
+            "cats"
+          WHERE
+            ("cats"."name" = $1)
+        SQL
+      expect(query.text).to eq(expected_query)
     end
   end
 
   describe '#cache!' do
     context 'when the query is unsupported' do
-      subject { query.cache! }
-
-      let(:query) { build(:unsupported_proxied_query) }
-
       it 'raises a ProxiedQuery::UnsupportedError' do
-        expect { subject }.to raise_error(Readyset::Query::ProxiedQuery::UnsupportedError)
+        query = build(:unsupported_proxied_query)
+
+        expect { query.cache! }.to raise_error(Readyset::Query::ProxiedQuery::UnsupportedError)
       end
     end
 
-    context 'when the query is supported and not cached' do
-      subject { query.cache!(**args) }
+    context 'when the query is supported' do
+      it 'creates the cache on ReadySet' do
+        query = build_and_execute_proxied_query(:proxied_query)
 
-      let(:args) { { always: true, name: 'test name' } }
-      let(:query) { build(:proxied_query) }
+        query.cache!
 
-      before do
-        allow(Readyset::Query::CachedQuery).to receive(:find).with(query.id).
-          and_return(build(:cached_query))
-        allow(Readyset).to receive(:create_cache!).with(id: query.id, **args)
-
-        subject
-      end
-
-      it 'invokes Readyset.create_cache! with the correct arguments' do
-        expect(Readyset).to have_received(:create_cache!).with(id: query.id, **args)
+        caches = Readyset::Query::CachedQuery.all
+        expect(caches).to eq([build(:cached_query)])
       end
 
       it 'returns the cached query' do
-        is_expected.to eq(build(:cached_query))
+        query = build_and_execute_proxied_query(:proxied_query)
+
+        cache = query.cache!
+
+        caches = Readyset::Query::CachedQuery.all
+        expect(caches).to eq([cache])
       end
     end
   end

@@ -19,76 +19,137 @@ RSpec.describe Readyset do
 
   describe '.create_cache!' do
     context 'when given neither a SQL string nor an ID' do
-      subject { Readyset.create_cache! }
-
       it 'raises an ArgumentError' do
-        expect { subject }.to raise_error(ArgumentError)
+        expect { Readyset.create_cache! }.to raise_error(ArgumentError)
       end
     end
 
     context 'when given both a SQL string and an ID' do
-      subject { Readyset.create_cache!(sql: 'SELECT * FROM t WHERE x = 1', id: 'fake_query_id') }
-
       it 'raises an ArgumentError' do
-        expect { subject }.to raise_error(ArgumentError)
+        proxied_query = build(:proxied_query)
+
+        expect { Readyset.create_cache!(sql: proxied_query.text, id: proxied_query.id) }.
+          to raise_error(ArgumentError)
       end
     end
 
     context 'when given a SQL string but not an ID' do
-      subject { Readyset.create_cache!(sql: 'SELECT * FROM t WHERE x = 1') }
+      it 'creates a cache using the given SQL string' do
+        Readyset.create_cache!(sql: build(:proxied_query).text)
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-        'CREATE CACHE FROM SELECT * FROM t WHERE x = 1'
+        expected_cache = build(:cached_query)
+        cache = Readyset::Query::CachedQuery.all.first
+        expect(cache.id).to eq(expected_cache.id)
+        expect(cache.text).to eq(expected_cache.text)
+      end
     end
 
     context 'when given an ID but not a SQL string' do
-      subject { Readyset.create_cache!(id: 'fake_query_id') }
+      it 'creates a cache using the given ID' do
+        # We invoke the query here so it shows up in SHOW PROXIED QUERIES, which is a prerequisite
+        # for creating a cache via a query ID
+        proxied_query = build_and_execute_proxied_query(:proxied_query)
+        Readyset.create_cache!(id: proxied_query.id)
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-        'CREATE CACHE FROM "fake_query_id"'
+        expected_cache = build(:cached_query)
+        cache = Readyset::Query::CachedQuery.all.first
+        expect(cache.id).to eq(expected_cache.id)
+        expect(cache.text).to eq(expected_cache.text)
+      end
+
+      it 'quotes the ID as an identifier' do
+        allow(Readyset).to receive(:raw_query).with('CREATE CACHE FROM "test_id"')
+
+        Readyset.create_cache!(id: 'test_id')
+
+        expect(Readyset).to have_received(:raw_query).with('CREATE CACHE FROM "test_id"')
+      end
     end
 
     context 'when only the "always" parameter is passed' do
-      subject { Readyset.create_cache!(id: 'fake_query_id', always: true) }
+      it 'creates a cache with the "always" parameter on ReadySet' do
+        Readyset.create_cache!(sql: build(:proxied_query).text, always: true)
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-        'CREATE CACHE ALWAYS FROM "fake_query_id"'
+        cache = Readyset::Query::CachedQuery.all.first
+        expect(cache.always).to eq(true)
+      end
     end
 
     context 'when only the "name" parameter is passed' do
-      subject { Readyset.create_cache!(id: 'fake_query_id', name: 'test_cache') }
+      it 'creates a cache with a name on ReadySet' do
+        Readyset.create_cache!(sql: build(:proxied_query).text, name: 'test_name')
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-        'CREATE CACHE "test_cache" FROM "fake_query_id"'
+        cache = Readyset::Query::CachedQuery.all.first
+        expect(cache.name).to eq('test_name')
+      end
+
+      it 'quotes the name as an identifier' do
+        allow(Readyset).to receive(:raw_query).with('CREATE CACHE "test_name" FROM "test_id"')
+
+        Readyset.create_cache!(id: 'test_id', name: 'test_name')
+
+        expect(Readyset).to have_received(:raw_query).
+          with('CREATE CACHE "test_name" FROM "test_id"')
+      end
     end
 
     context 'when both the "always" and "name" parameters are passed' do
-      subject { Readyset.create_cache!(id: 'fake_query_id', always: true, name: 'test_cache') }
+      it 'creates a cache with a name on ReadySet' do
+        Readyset.create_cache!(sql: build(:proxied_query).text, always: true, name: 'test_name')
 
-      it_behaves_like 'a wrapper around a ReadySet SQL extension',
-        'CREATE CACHE ALWAYS "test_cache" FROM "fake_query_id"'
+        cache = Readyset::Query::CachedQuery.all.first
+        expect(cache.always).to eq(true)
+        expect(cache.name).to eq('test_name')
+      end
+
+      it 'quotes the name as an identifier' do
+        allow(Readyset).to receive(:raw_query).
+          with('CREATE CACHE ALWAYS "test_name" FROM "test_id"')
+
+        Readyset.create_cache!(id: 'test_id', always: true, name: 'test_name')
+
+        expect(Readyset).to have_received(:raw_query).
+          with('CREATE CACHE ALWAYS "test_name" FROM "test_id"')
+      end
+    end
+
+    context 'when neither the "always" nor the "name" parameters are passed' do
+      it 'creates a cache on ReadySet without the "always" parameter and whose name is the query ' \
+          'ID' do
+        Readyset.create_cache!(sql: build(:proxied_query).text)
+
+        expected_cache = build(:cached_query)
+        cache = Readyset::Query::CachedQuery.all.first
+        expect(cache.always).to eq(false)
+        expect(cache.name).to eq(expected_cache.id)
+      end
     end
   end
 
   describe '.drop_cache!' do
-    subject { Readyset.drop_cache!('query_name') }
+    it 'drops the cache with the given name' do
+      cache_to_drop = build_and_create_cache(:cached_query)
+      cache_to_keep = build_and_create_cache(:cached_query_2)
+      caches_before_dropping = Readyset::Query::CachedQuery.all
+      Readyset.drop_cache!(cache_to_drop.name)
+      caches_after_dropping = Readyset::Query::CachedQuery.all
 
-    it_behaves_like 'a wrapper around a ReadySet SQL extension', 'DROP CACHE "query_name"'
+      expect(caches_before_dropping.size).to eq(2)
+      expect(caches_after_dropping).to eq([cache_to_keep])
+    end
+
+    it 'quotes the name as an identifier' do
+      allow(Readyset).to receive(:raw_query).with('DROP CACHE "test_name"')
+
+      Readyset.drop_cache!('test_name')
+
+      expect(Readyset).to have_received(:raw_query).with('DROP CACHE "test_name"')
+    end
   end
 
   describe '.explain' do
-    it 'invokes `Explain.call` with the given query' do
+    it 'returns a `Readyset::Explain` for the given query' do
       explain = build(:explain)
-      allow(Readyset::Explain).to receive(:call).with(explain.text).and_return(explain)
-
-      Readyset.explain(explain.text)
-
-      expect(Readyset::Explain).to have_received(:call).with(explain.text)
-    end
-
-    it 'returns a `Explain`' do
-      explain = build(:explain)
-      allow(Readyset::Explain).to receive(:call).with(explain.text).and_return(explain)
 
       result = Readyset.explain(explain.text)
 
@@ -97,147 +158,131 @@ RSpec.describe Readyset do
   end
 
   describe '.raw_query' do
-    subject { Readyset.raw_query(*query) }
+    it 'invokes the given query on ReadySet and returns the results' do
+      build_and_create_cache(:cached_query)
 
-    let(:query) { ['SELECT * FROM cats WHERE name = ?', 'whiskers'] }
+      results = Readyset.raw_query('SHOW CACHES').to_a
 
-    before do
-      ActiveRecord::Base.connected_to(shard: Readyset.configuration.shard) do
-        Cat.create!(name: 'whiskers')
-        Cat.create!(name: 'fluffy')
-        Cat.create!(name: 'tails')
-      end
-
-      subject
+      expected_query =
+        <<~SQL.chomp
+          SELECT
+            "public"."cats"."breed"
+          FROM
+            "public"."cats"
+          WHERE
+            ("public"."cats"."name" = $1)
+        SQL
+      expected_hash = {
+        'query id' => 'q_4f3fb9ad8f73bc0c',
+        'cache name' => 'q_4f3fb9ad8f73bc0c',
+        'query text' => expected_query,
+        'fallback behavior' => 'fallback allowed',
+        'count' => '0',
+      }
+      expect(results).to eq([expected_hash])
     end
+  end
 
-    it 'returns the results from the query' do
-      expect(subject.size).to eq(1)
-      expect(subject.first['name']).to eq('whiskers')
+  describe '.raw_query_sanitize' do
+    it 'invokes the given SQL array on ReadySet and returns the results' do
+      cache = build_and_create_cache(:cached_query)
+      build_and_create_cache(:cached_query_2)
+
+      results = Readyset.raw_query_sanitize('SHOW CACHES WHERE query_id = ?', cache.id).to_a
+
+      expected_query =
+        <<~SQL.chomp
+          SELECT
+            "public"."cats"."breed"
+          FROM
+            "public"."cats"
+          WHERE
+            ("public"."cats"."name" = $1)
+        SQL
+      expected_hash = {
+        'query id' => 'q_4f3fb9ad8f73bc0c',
+        'cache name' => 'q_4f3fb9ad8f73bc0c',
+        'query text' => expected_query,
+        'fallback behavior' => 'fallback allowed',
+        'count' => '0',
+      }
+      expect(results).to eq([expected_hash])
     end
   end
 
   describe '.route' do
-    subject { Readyset.route(prevent_writes: prevent_writes, &block) }
-
-    let(:query_results) { instance_double(Cat) }
-
-    RSpec.shared_examples 'uses the expected connection parameters' do |role, shard|
-      it "sets the role to be #{role}" do
-        begin
-          subject
-        rescue ActiveRecord::ReadOnlyError
-        end
-
-        expect(@role).to eq(ActiveRecord.writing_role)
-      end
-
-      it "sets the shard to be #{shard}" do
-        begin
-          subject
-        rescue ActiveRecord::ReadOnlyError
-        end
-
-        expect(@shard).to eq(Readyset.configuration.shard)
-      end
-    end
-
     context 'when prevent_writes is true' do
-      let(:prevent_writes) { true }
-
       context 'when the block contains a write query' do
-        let(:block) do
-          Proc.new do
-            @role = ActiveRecord::Base.connection.role
-            @shard = ActiveRecord::Base.connection.shard
-            Cat.create!(name: 'whiskers')
-          end
-        end
-
         it 'raises an ActiveRecord::ReadOnlyError' do
-          expect { subject }.to raise_error(ActiveRecord::ReadOnlyError)
+          expect { Readyset.route(prevent_writes: true) { create(:cat) } }.
+            to raise_error(ActiveRecord::ReadOnlyError)
         end
-
-        include_examples 'uses the expected connection parameters', ActiveRecord.writing_role,
-          Readyset.configuration.shard
       end
 
       context 'when the block contains a read query' do
-        let(:block) do
-          Proc.new do
-            @role = ActiveRecord::Base.connection.role
-            @shard = ActiveRecord::Base.connection.shard
-            'test return value'
-          end
-        end
-
         it 'returns the result of the block' do
-          expect(subject).to eq('test return value')
+          expected_cat = create(:cat)
+
+          cat = Readyset.route(prevent_writes: true) do
+            Cat.find(expected_cat.id)
+          end
+
+          expect(cat).to eq(expected_cat)
         end
 
-        include_examples 'uses the expected connection parameters', ActiveRecord.writing_role,
-          Readyset.configuration.shard
+        it 'executes the query against ReadySet' do
+          expected_cache = build_and_create_cache(:cached_query)
+
+          result = Readyset.route(prevent_writes: true) do
+            ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
+          end
+
+          expect(result.size).to eq(1)
+          cache = Readyset::Query::CachedQuery.
+            send(:from_readyset_result, **result.first.symbolize_keys)
+          expect(cache).to eq(expected_cache)
+        end
       end
     end
 
     context 'when prevent_writes is false' do
-      let(:prevent_writes) { false }
-
       context 'when the block contains a write query' do
-        let(:block) do
-          Proc.new do
-            @role = ActiveRecord::Base.connection.role
-            @shard = ActiveRecord::Base.connection.shard
-            Cat.create!(name: 'whiskers')
-            'test return value'
-          end
-        end
-
         it 'returns the result of the block' do
-          expect(subject).to eq('test return value')
+          result = Readyset.route(prevent_writes: false) do
+            create(:cat)
+            'test'
+          end
+
+          expect(result).to eq('test')
         end
 
         it 'executes the write against ReadySet' do
-          subject
+          proxied_query = build(:proxied_query)
 
-          exists = ActiveRecord::Base.connected_to(shard: Readyset.configuration.shard) do
-            Cat.where(name: 'whiskers').exists?
+          Readyset.route(prevent_writes: false) do
+            sanitized = ActiveRecord::Base.
+              sanitize_sql_array(['CREATE CACHE FROM %s', proxied_query.text])
+            ActiveRecord::Base.connection.execute(sanitized)
           end
 
-          expect(exists).to eq(true)
-
-          exists = ActiveRecord::Base.connected_to(shard: :primary) do
-            Cat.where(name: 'whiskers').exists?
-          end
-
-          expect(exists).to eq(false)
+          expected_cache = build(:cached_query)
+          cache = Readyset::Query::CachedQuery.find(expected_cache.id)
+          expect(cache).to eq(expected_cache)
         end
-
-        include_examples 'uses the expected connection parameters', ActiveRecord.writing_role,
-          Readyset.configuration.shard
       end
 
       context 'when the block contains a read query' do
-        let(:block) do
-          Proc.new do
-            @role = ActiveRecord::Base.connection.role
-            @shard = ActiveRecord::Base.connection.shard
-            Cat.where(name: 'whiskers').exists?
-          end
-        end
-
-        before do
-          ActiveRecord::Base.connected_to(shard: Readyset.configuration.shard) do
-            Cat.create!(name: 'whiskers')
-          end
-        end
-
         it 'executes the read against ReadySet' do
-          expect(subject).to eq(true)
-        end
+          expected_cache = build_and_create_cache(:cached_query)
 
-        include_examples 'uses the expected connection parameters', ActiveRecord.writing_role,
-          Readyset.configuration.shard
+          results = Readyset.route(prevent_writes: false) do
+            ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
+          end
+
+          cache = Readyset::Query::CachedQuery.
+            send(:from_readyset_result, **results.first.symbolize_keys)
+          expect(cache).to eq(expected_cache)
+        end
       end
     end
   end

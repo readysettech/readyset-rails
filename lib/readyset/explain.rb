@@ -12,7 +12,7 @@ module Readyset
     # @param [String] a query about which information should be retrieved
     # @return [Explain]
     def self.call(query)
-      raw_results = Readyset.raw_query('EXPLAIN CREATE CACHE FROM %s', query)
+      raw_results = Readyset.raw_query("EXPLAIN CREATE CACHE FROM #{query}")
       from_readyset_results(**raw_results.first.to_h.symbolize_keys)
     end
 

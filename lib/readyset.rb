@@ -100,9 +100,13 @@ module Readyset
   # @note This method is not part of the public API.
   # @param sql_array [Array<Object>] the SQL array to be executed against ReadySet.
   # @return [PG::Result] the result of executing the SQL query.
-  def self.raw_query(*sql_array) # :nodoc:
+  def self.raw_query_sanitize(*sql_array) # :nodoc:
+    raw_query(ActiveRecord::Base.sanitize_sql_array(sql_array))
+  end
+
+  def self.raw_query(query) # :nodoc:
     ActiveRecord::Base.connected_to(role: writing_role, shard: shard, prevent_writes: false) do
-      ActiveRecord::Base.connection.execute(ActiveRecord::Base.sanitize_sql_array(sql_array))
+      ActiveRecord::Base.connection.execute(query)
     end
   end
 

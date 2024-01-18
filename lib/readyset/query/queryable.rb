@@ -10,7 +10,7 @@ module Readyset
       end
 
       def find(query, id) # :nodoc:
-        result = Readyset.raw_query(query, id).first
+        result = Readyset.raw_query_sanitize(query, id).first
 
         if result.nil?
           raise NotFoundError, id
