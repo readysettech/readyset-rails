@@ -207,6 +207,32 @@ RSpec.describe 'readyset.rake' do
           expect(proxied).to be_empty
         end
       end
+
+      describe 'supported' do
+        it 'prints a table that shows only proxied queries supported by ReadySet' do
+          build_and_execute_proxied_query(:proxied_query)
+          build_and_execute_proxied_query(:unsupported_proxied_query)
+
+          eventually do
+            Readyset::Query::ProxiedQuery.all.all? { |query| query.supported != :pending }
+          end
+
+          expected_message = Regexp.new <<~TABLE
+            \\+--------------------\\+------------------------\\+-------\\+
+            \\| id                 \\| text                   \\| count \\|
+            \\+--------------------\\+------------------------\\+-------\\+
+            \\| q_4f3fb9ad8f73bc0c \\| SELECT                 \\| \\d+[ ]*\\|
+            \\|                    \\|   "cats"\\."breed"       \\| [ ]*\\|
+            \\|                    \\| FROM                   \\| [ ]*\\|
+            \\|                    \\|   "cats"               \\| [ ]*\\|
+            \\|                    \\| WHERE                  \\| [ ]*\\|
+            \\|                    \\|   \\("cats"\\."name" = \\$1\\) \\| [ ]*\\|
+            \\+--------------------\\+------------------------\\+-------\\+
+          TABLE
+          expect { Rake::Task['readyset:proxied_queries:supported'].execute }.
+            to output(expected_message).to_stdout
+        end
+      end
     end
 
     describe 'status' do

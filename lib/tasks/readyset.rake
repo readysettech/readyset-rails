@@ -30,6 +30,18 @@ namespace :readyset do
 
       Readyset.raw_query('DROP ALL PROXIED QUERIES')
     end
+
+    desc 'Prints a list of all the queries that ReadySet has proxied that can be cached'
+    task supported: :environment do
+      Rails.application.eager_load!
+
+      rows = Readyset::Query::ProxiedQuery.all.
+        select { |query| query.supported == :yes }.
+        map { |q| [q.id, q.text, q.count] }
+      table = Terminal::Table.new(headings: [:id, :text, :count], rows: rows)
+
+      puts table
+    end
   end
 
   desc 'Prints a list of all the cached queries on ReadySet'
