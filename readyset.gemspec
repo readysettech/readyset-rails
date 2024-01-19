@@ -35,6 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'activerecord', '>= 6.1'
   spec.add_dependency 'activesupport', '>= 6.1'
   spec.add_dependency 'colorize', '~> 1.1'
+  spec.add_dependency 'pg_query', '~> 5.1'
   spec.add_dependency 'progressbar', '~> 1.13'
   spec.add_dependency 'rake', '~> 13.0'
   spec.add_dependency 'terminal-table', '~> 3.0'

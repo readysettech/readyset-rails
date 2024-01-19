@@ -1,4 +1,5 @@
 require 'active_model'
+require 'pg_query'
 
 require 'readyset/query'
 require 'readyset/query/queryable'
@@ -24,7 +25,7 @@ module Readyset
       #
       # @return [Array<ProxiedQuery>]
       def self.all
-        super('SHOW PROXIED QUERIES')
+        super('SHOW PROXIED QUERIES').reject(&:references_internal_rails_table?)
       end
 
       # Creates a cache for every proxied query that is not already cached.
@@ -92,6 +93,13 @@ module Readyset
           Readyset.create_cache!(id: id, name: name, always: always)
           CachedQuery.find(id)
         end
+      end
+
+      def references_internal_rails_table? # :nodoc:
+        table_list = PgQuery.parse(text).tables
+
+        table_list.include?(ActiveRecord::Base.schema_migrations_table_name) ||
+          table_list.include?(ActiveRecord::Base.internal_metadata_table_name)
       end
 
       private

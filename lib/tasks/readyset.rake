@@ -148,6 +148,10 @@ namespace :readyset do
     Rails.application.eager_load!
 
     rows = Readyset.raw_query('SHOW READYSET TABLES').
+      reject do |result|
+        result['table'].include?(ActiveRecord::Base.schema_migrations_table_name) ||
+          result['table'].include?(ActiveRecord::Base.internal_metadata_table_name)
+      end.
       map { |result| [result['table'], result['status'], result['description']] }
     table = Terminal::Table.new(headings: [:table, :status, :description], rows: rows)
 
