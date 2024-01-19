@@ -12,6 +12,11 @@ module Readyset
       ActiveSupport.on_load(:active_record) do
         ActiveRecord::Base.prepend(Readyset::ModelExtension)
         ActiveRecord::Relation.prepend(Readyset::RelationExtension)
+
+        Readyset.route do
+          shard = Readyset.config.shard
+          ActiveRecord::Base.connects_to(shards: { shard => { reading: shard, writing: shard } })
+        end
       end
     end
 

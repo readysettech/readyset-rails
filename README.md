@@ -90,10 +90,6 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
        host: "127.0.0.1"
        port: 5433
    ```
-4. Add the following line to your `ApplicationRecord` class:
-   ```ruby
-   connects_to shards: { readyset: { reading: :readyset, writing: :readyset } }
-   ```
    You can verify that ReadySet is up and your application is connected by
    running `rails readyset:status`:
    ```sh
@@ -119,7 +115,7 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    | "public"."posts"                | Snapshotted |             |
    +---------------------------------+-------------+-------------+
    ```
-5. Run `Readyset.configure` wherever you configure other gems in your
+4. Run `Readyset.configure` wherever you configure other gems in your
    application, and set any desired configuration options:
    ```ruby
    Readyset.configure do |config|
@@ -128,7 +124,7 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    ```
    The list of available configuration options can be found
    [here](#configuration-options).
-6. FOR RAILS 7 USERS: Enable Rails's query log tags features by setting
+5. FOR RAILS 7 USERS: Enable Rails's query log tags features by setting
    `config.active_record.query_log_tags_enabled = true` wherever you configure
    your ActiveRecord settings. This will append information to your
    ActiveRecord query logs that tells you where the given query was routed (e.g.
@@ -145,7 +141,7 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    ```
 3. Start up your application and drive traffic through the part of your
    application that invokes the query you routed in the previous step
-4. If you are running Rails 7 and enabled query log tags as explained in step 6
+4. If you are running Rails 7 and enabled query log tags as explained in step 5
    [above](#installing), you should see an annotation next to the query in your
    application logs that denotes where the query was routed. If the
    `destination` tag has the value `readyset`, the query was routed to
