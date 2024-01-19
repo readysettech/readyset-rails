@@ -1,6 +1,6 @@
 class ReadysetCaches < Readyset::Caches
 <% queries.each do |query| -%>
-  cache id: <%= query.id.dump %>, always: <%= query.always %> do
+  cache always: <%= query.always %> do
     <<~SQL
       <%= query.text.gsub("\n", "\n      ") %>
     SQL

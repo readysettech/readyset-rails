@@ -5,9 +5,9 @@ RSpec.describe Readyset::Caches do
     end
 
     it 'adds a cache with the given attributes to the @caches ivar' do
-      query = build(:cached_query, always: true, count: nil, name: nil)
+      query = build(:cached_query, always: true, count: nil, id: nil, name: nil)
 
-      Readyset::Caches.cache(always: true, id: query.id) { query.text }
+      Readyset::Caches.cache(always: true) { query.text }
 
       caches = Readyset::Caches.instance_variable_get(:@caches)
       expect(caches.size).to eq(1)
@@ -16,9 +16,9 @@ RSpec.describe Readyset::Caches do
 
     context 'when no always parameter is passed' do
       it 'defaults the always parameter to false' do
-        query = build(:cached_query, count: nil, name: nil)
+        query = build(:cached_query, count: nil, id: nil, name: nil)
 
-        Readyset::Caches.cache(id: query.id) { query.text }
+        Readyset::Caches.cache { query.text }
 
         always = Readyset::Caches.instance_variable_get(:@caches).first.always
         expect(always).to eq(false)
@@ -28,8 +28,8 @@ RSpec.describe Readyset::Caches do
 
   describe '.caches' do
     it 'returns the caches stored in the @caches ivar' do
-      query = build(:cached_query, count: nil, name: nil)
-      Readyset::Caches.cache(always: query.always, id: query.id) { query.text }
+      query = build(:cached_query, count: nil, id: nil, name: nil)
+      Readyset::Caches.cache(always: query.always) { query.text }
 
       result = Readyset::Caches.caches
 

@@ -6,13 +6,12 @@ module Readyset
       attr_reader :caches
     end
 
-    def self.cache(id:, always: false)
+    def self.cache(always: false)
       @caches ||= Set.new
 
       query = yield
 
       @caches << Query::CachedQuery.new(
-        id: id,
         text: query.strip,
         always: always,
       )

@@ -11,6 +11,7 @@ namespace :readyset do
       template = File.read(File.join(File.dirname(__FILE__), '../templates/caches.rb.tt'))
 
       queries = Readyset::Query::CachedQuery.all
+
       f = File.new(Readyset.configuration.migration_path, 'w')
       f.write(ERB.new(template, trim_mode: '-').result(binding))
       f.close
@@ -29,41 +30,37 @@ namespace :readyset do
       # definition of the `Readyset::Caches` subclass is garbage collected too
       container = Object.new
       container.instance_eval(File.read(file))
-      caches = container.singleton_class::ReadysetCaches.caches
+      caches_in_migration_file = container.singleton_class::ReadysetCaches.caches.index_by(&:text)
+      caches_on_readyset = Readyset::Query::CachedQuery.all.index_by(&:text)
 
-      caches_on_readyset = Readyset::Query::CachedQuery.all.index_by(&:id)
-      caches_on_readyset_ids = caches_on_readyset.keys.to_set
+      to_drop = caches_on_readyset.keys - caches_in_migration_file.keys
+      to_create = caches_in_migration_file.keys - caches_on_readyset.keys
 
-      caches_in_migration_file = caches.index_by(&:id)
-      caches_in_migration_file_ids = caches_in_migration_file.keys.to_set
-
-      to_drop_ids = caches_on_readyset_ids - caches_in_migration_file_ids
-      to_create_ids = caches_in_migration_file_ids - caches_on_readyset_ids
-
-      if to_drop_ids.size.positive? || to_create_ids.size.positive?
+      if to_drop.size.positive? || to_create.size.positive?
         dropping = 'Dropping'.red
         creating = 'creating'.green
-        print "#{dropping} #{to_drop_ids.size} caches and #{creating} #{to_create_ids.size} " \
-          'caches. Continue? (y/n) '
+        print "#{dropping} #{to_drop.size} caches and #{creating} #{to_create.size} caches. " \
+          'Continue? (y/n) '
         $stdout.flush
         y_or_n = STDIN.gets.strip
 
         if y_or_n == 'y'
-          if to_drop_ids.size.positive?
-            bar = ProgressBar.create(title: 'Dropping caches', total: to_drop_ids.size)
+          if to_drop.size.positive?
+            bar = ProgressBar.create(title: 'Dropping caches', total: to_drop.size)
 
-            to_drop_ids.each do |id|
+            to_drop.each do |text|
               bar.increment
-              Readyset.drop_cache!(name_or_id: id)
+              Readyset.drop_cache!(caches_on_readyset[text].name)
             end
           end
 
-          if to_create_ids.size.positive?
-            bar = ProgressBar.create(title: 'Creating caches', total: to_create_ids.size)
+          if to_create.size.positive?
+            bar = ProgressBar.create(title: 'Creating caches', total: to_create.size)
 
-            to_create_ids.each do |id|
+            to_create.each do |text|
               bar.increment
-              Readyset.create_cache!(id: id)
+              cache = caches_in_migration_file[text]
+              Readyset.create_cache!(sql: text, always: cache.always)
             end
           end
         end
