@@ -96,7 +96,30 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    connects_to shards: { readyset: { reading: :readyset, writing: :readyset } }
    ```
    You can verify that ReadySet is up and your application is connected by
-   running `rails readyset:status`.
+   running `rails readyset:status`:
+   ```sh
+   $ rails readyset:status
+   +----------------------------+------------------------+
+   | Database Connection        | Connected              |
+   | Connection Count           | 1                      |
+   | Snapshot Status            | Completed              |
+   | Maximum Replication Offset | (0/6DBBD78, 0/6DBBFF0) |
+   | Minimum Replication Offset | (0/6DBBD78, 0/6DBBFF0) |
+   | Last started Controller    | 2024-01-17 18:49:02    |
+   | Last completed snapshot    | 2024-01-19 15:18:02    |
+   | Last started replication   | 2024-01-19 15:18:02    |
+   +----------------------------+------------------------+
+   ```
+   You can also view the tables that ReadySet knows about and their status by
+   running `rails readyset:tables`:
+   ```sh
+   $ rails readyset:tables
+   +---------------------------------+-------------+-------------+
+   | table                           | status      | description |
+   +---------------------------------+-------------+-------------+
+   | "public"."posts"                | Snapshotted |             |
+   +---------------------------------+-------------+-------------+
+   ```
 5. Run `Readyset.configure` wherever you configure other gems in your
    application, and set any desired configuration options:
    ```ruby
@@ -122,16 +145,55 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    `rails readyset:proxied_queries`. A "proxied" query is one that was served
    by ReadySet but was proxied to your primary database, since a cache for the
    query does not yet exist
+   ```sh
+   $ rails readyset:proxied_queries
+   +--------------------+-------------------------------------------------------+-------------+-------+
+   | id                 | text                                                  | supported   | count |
+   +--------------------+-------------------------------------------------------+-------------+-------+
+   | q_281c5f9b8e4013bb | SELECT                                                | yes         | 1     |
+   |                    |   *                                                   |             |       |
+   |                    | FROM                                                  |             |       |
+   |                    |   "posts"                                             |             |       |
+   |                    | WHERE                                                 |             |       |
+   |                    |   ("user_id" = $1)                                    |             |       |
+   +--------------------+-------------------------------------------------------+-------------+-------+
+   ```
 5. Create a cache for the query by running
    `rails readyset:proxied_queries:cache_all_supported`. This will create caches for
    all of the queries proxied by ReadySet that are supported to be cached. You
    can verify that the expected caches were created by running
-   `rails readyset:caches`
+   `rails readyset:caches`:
+   ```sh
+   $ rails readyset:caches
+   +--------------------+--------------------+-------------------------------------+--------+-------+
+   | id                 | name               | text                                | always | count |
+   +--------------------+--------------------+-------------------------------------+--------+-------+
+   | q_281c5f9b8e4013bb | q_281c5f9b8e4013bb | SELECT                              | false  | 0     |
+   |                    |                    |   "public"."posts"."user_id"        |        |       |
+   |                    |                    | FROM                                |        |       |
+   |                    |                    |   "public"."posts"                  |        |       |
+   |                    |                    | WHERE                               |        |       |
+   |                    |                    |   ("public"."posts"."user_id" = $1) |        |       |
+   +--------------------+--------------------+-------------------------------------+--------+-------+
+   ```
 6. Drive traffic through the part of your application that invokes your cached
    query. The first invocation of the query will be a cache miss, but the
    second will be served from the cache. You can verify that the cache was
    successfully used by looking at the `count` column in the output of
-   `rails readyset:caches`
+   `rails readyset:caches`:
+   ```sh
+   $ rails readyset:caches
+   +--------------------+--------------------+-------------------------------------+--------+-------+
+   | id                 | name               | text                                | always | count |
+   +--------------------+--------------------+-------------------------------------+--------+-------+
+   | q_281c5f9b8e4013bb | q_281c5f9b8e4013bb | SELECT                              | false  | 1     |
+   |                    |                    |   "public"."posts"."user_id"        |        |       |
+   |                    |                    | FROM                                |        |       |
+   |                    |                    |   "public"."posts"                  |        |       |
+   |                    |                    | WHERE                               |        |       |
+   |                    |                    |   ("public"."posts"."user_id" = $1) |        |       |
+   +--------------------+--------------------+-------------------------------------+--------+-------+
+   ```
 
 ## Usage
 
@@ -182,7 +244,7 @@ ReadySet across restarts (although any in-memory cached data will be lost when
 ReadySet goes down). You can view the list of existing caches using the provided
 Rake task:
 ```sh
-rails readyset:caches:show_all
+rails readyset:caches
 ```
 To drop a given cache in the list printed by the above command, you can pass the
 name of the cache to the `readyset:caches:drop` Rake task like so:
@@ -244,7 +306,7 @@ migration file.
 The following Rake task dumps the current set of caches to the
 `db/readyset_caches.rb` file:
 ```sh
-rails readyset:caches:dump_to_file
+rails readyset:caches:dump
 ```
 This file should be checked into version control with your application code. To
 update a ReadySet instance so that its set of caches matches the caches in your
