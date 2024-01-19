@@ -238,6 +238,16 @@ to your database. To create a cache for a specific query, you have a few options
   ```
   You can invoke `#cache!` on the queries in this list for which you'd like to
   create caches on ReadySet.
+- View the list of queries that ReadySet has proxied *and* that are supported
+  by ReadySet to be cached by running the following:
+  ```sh
+  rails readyset:proxied_queries:supported
+  ```
+  Pick a query from the list that you'd like to cache, and pass the ID to the
+  `rails readyset:create_cache` command like so:
+  ```sh
+  rails readyset:create_cache[your_query_id]
+  ```
 
 Once a cache has been created for a particular query, it will persist on
 ReadySet across restarts (although any in-memory cached data will be lost when
