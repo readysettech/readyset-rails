@@ -2,8 +2,7 @@
 
 A gem for caching with [ReadySet](https://readyset.io) within Rails applications.
 
-[![Build status](https://badge.buildkite.com/76e02771ab1f0706b7840f47c5fed0e315a56c408d86c0de8c.svg?branch=main)](https://buildkite.com/readyset/readyset-public)
-[![Build status](https://github.com/readysettech/readyset-rails/actions/workflows/rspec.yml/badge.svg)]
+![Build status](https://github.com/readysettech/readyset-rails/actions/workflows/rspec.yml/badge.svg)
 [![Number of GitHub issues that are open](https://img.shields.io/github/issues/readysettech/readyset-rails)](https://github.com/readysettech/readyset-rails/issues)
 ![Number of GitHub closed issues](https://img.shields.io/github/issues-closed/readysettech/readyset-rails)
 ![Number of GitHub pull requests that are open](https://img.shields.io/github/issues-pr-raw/readysettech/readyset-rails)
@@ -110,7 +109,7 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    | Last started replication   | 2024-01-19 15:18:02    |
    +----------------------------+------------------------+
    ```
-   You can also view the tables that ReadySet knows about and their status by
+   You can also view the tables that ReadySet knows about and their statuses by
    running `rails readyset:tables`:
    ```sh
    $ rails readyset:tables
@@ -129,6 +128,11 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    ```
    The list of available configuration options can be found
    [here](#configuration-options).
+6. FOR RAILS 7 USERS: Enable Rails's query log tags features by setting
+   `config.active_record.query_log_tags_enabled = true` wherever you configure
+   your ActiveRecord settings. This will append information to your
+   ActiveRecord query logs that tells you where the given query was routed (e.g.
+   to ReadySet or to your primary database)
 
 ## Quickstart
 
@@ -141,10 +145,16 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
    ```
 3. Start up your application and drive traffic through the part of your
    application that invokes the query you routed in the previous step
-4. Validate that the query was routed to ReadySet by running
-   `rails readyset:proxied_queries`. A "proxied" query is one that was served
-   by ReadySet but was proxied to your primary database, since a cache for the
-   query does not yet exist
+4. If you are running Rails 7 and enabled query log tags as explained in step 6
+   [above](#installing), you should see an annotation next to the query in your
+   application logs that denotes where the query was routed. If the
+   `destination` tag has the value `readyset`, the query was routed to
+   ReadySet.
+
+   If you are running Rails 6, you can validate that the query was routed to
+   ReadySet by running `rails readyset:proxied_queries`. A "proxied" query is
+   one that was served by ReadySet but was proxied to your primary database,
+   since a cache for the query does not yet exist:
    ```sh
    $ rails readyset:proxied_queries
    +--------------------+-------------------------------------------------------+-------------+-------+
