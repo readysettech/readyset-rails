@@ -4,6 +4,29 @@ require 'progressbar'
 require 'terminal-table'
 
 namespace :readyset do
+  desc 'Creates a cache from the given query ID'
+  task :create_cache, [:id] => :environment do |_, args|
+    Rails.application.eager_load!
+
+    if args.first
+      Readyset.create_cache!(id: args.first)
+    else
+      puts 'A query ID must be passed to this task'
+    end
+  end
+
+  desc 'Creates a cache from the given query ID whose queries will never fall back to the ' \
+    'primary database'
+  task :create_cache_always, [:id] => :environment do |_, args|
+    Rails.application.eager_load!
+
+    if args.first
+      Readyset.create_cache!(id: args.first, always: true)
+    else
+      puts 'A query ID must be passed to this task'
+    end
+  end
+
   desc 'Prints a list of all the queries that ReadySet has proxied'
   task proxied_queries: :environment do
     Rails.application.eager_load!

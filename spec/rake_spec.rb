@@ -10,6 +10,48 @@ RSpec.describe 'readyset.rake' do
   end
 
   describe 'readyset' do
+    describe 'create_cache' do
+      context 'when given a query ID as an argument' do
+        it 'creates a cache from the given query' do
+          query = build_and_execute_proxied_query(:proxied_query)
+          build_and_execute_proxied_query(:proxied_query_2)
+
+          Rake::Task['readyset:create_cache'].execute([query.id])
+
+          caches = Readyset::Query::CachedQuery.all
+          expect(caches).to eq([build(:cached_query)])
+        end
+      end
+
+      context 'when given no arguments' do
+        it 'prints an error message' do
+          expect { Rake::Task['readyset:create_cache'].execute }.
+            to output("A query ID must be passed to this task\n").to_stdout
+        end
+      end
+    end
+
+    describe 'create_cache_always' do
+      context 'when given a query ID as an argument' do
+        it 'creates a cache from the given query with `always` set to true' do
+          query = build_and_execute_proxied_query(:proxied_query)
+          build_and_execute_proxied_query(:proxied_query_2)
+
+          Rake::Task['readyset:create_cache_always'].execute([query.id])
+
+          caches = Readyset::Query::CachedQuery.all
+          expect(caches).to eq([build(:cached_query, always: true)])
+        end
+      end
+
+      context 'when given no arguments' do
+        it 'prints an error message' do
+          expect { Rake::Task['readyset:create_cache_always'].execute }.
+            to output("A query ID must be passed to this task\n").to_stdout
+        end
+      end
+    end
+
     describe 'caches' do
       it 'prints a table with the caches that currently exist on ReadySet' do
         build_and_create_cache(:cached_query)
