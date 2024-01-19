@@ -119,11 +119,11 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
 3. Start up your application and drive traffic through the part of your
    application that invokes the query you routed in the previous step
 4. Validate that the query was routed to ReadySet by running
-   `rails readyset:queries:proxied`. A "proxied" query is one that was served
+   `rails readyset:proxied_queries`. A "proxied" query is one that was served
    by ReadySet but was proxied to your primary database, since a cache for the
    query does not yet exist
 5. Create a cache for the query by running
-   `rails readyset:queries:cache_all_supported`. This will create caches for
+   `rails readyset:proxied_queries:cache_all_supported`. This will create caches for
    all of the queries proxied by ReadySet that are supported to be cached. You
    can verify that the expected caches were created by running
    `rails readyset:caches`
@@ -160,7 +160,7 @@ to your database. To create a cache for a specific query, you have a few options
   seen and proxied to your database since it last started up using the provided
   Rake task:
   ```sh
-  rails readyset:queries:cache_all_supported
+  rails readyset:proxied_queries:cache_all_supported
   ```
   **Note:** If you route a query to ReadySet, decide you no longer want to cache
   that query, and stop routing that query to ReadySet, that query will still
@@ -168,7 +168,7 @@ to your database. To create a cache for a specific query, you have a few options
   This means that running the above Rake task will still create a cache for that
   query **even though it is no longer annotated to be routed to ReadySet in your
   application code**. The list of queries ReadySet has proxied can be cleared by
-  restarting ReadySet or by running `rails readyset:queries:drop_all_proxied`.
+  restarting ReadySet or by running `rails readyset:proxied_queries:drop_all`.
 - View the list of queries that ReadySet has proxied by running the following
   in a Rails console:
   ```ruby
