@@ -1,9 +1,68 @@
 require 'colorize'
 require 'erb'
 require 'progressbar'
+require 'terminal-table'
 
 namespace :readyset do
+  desc 'Prints a list of all the queries that ReadySet has proxied'
+  task proxied_queries: :environment do
+    Rails.application.eager_load!
+
+    rows = Readyset::Query::ProxiedQuery.all.map do |q|
+      [q.id, q.text, q.supported, q.count]
+    end
+    table = Terminal::Table.new(headings: [:id, :text, :supported, :count], rows: rows)
+
+    puts table
+  end
+
+  namespace :proxied_queries do
+    desc 'Creates caches for all of the supported queries on ReadySet'
+    task cache_all_supported: :environment do
+      Rails.application.eager_load!
+
+      Readyset::Query::ProxiedQuery.cache_all_supported!
+    end
+
+    desc 'Clears the list of proxied queries on ReadySet'
+    task drop_all: :environment do
+      Rails.application.eager_load!
+
+      Readyset.raw_query('DROP ALL PROXIED QUERIES')
+    end
+  end
+
+  desc 'Prints a list of all the cached queries on ReadySet'
+  task caches: :environment do
+    Rails.application.eager_load!
+
+    rows = Readyset::Query::CachedQuery.all.map do |q|
+      [q.id, q.name, q.text, q.always, q.count]
+    end
+    table = Terminal::Table.new(headings: [:id, :name, :text, :always, :count], rows: rows)
+
+    puts table
+  end
+
   namespace :caches do
+    desc 'Drops the cache with the given name'
+    task :drop, [:name] => :environment do |_, args|
+      Rails.application.eager_load!
+
+      if args.first
+        Readyset.drop_cache!(args.first)
+      else
+        puts 'A cache name must be passed to this task'
+      end
+    end
+
+    desc 'Drops all the caches on ReadySet'
+    task drop_all: :environment do
+      Rails.application.eager_load!
+
+      Readyset::Query::CachedQuery.drop_all!
+    end
+
     desc 'Dumps the set of caches that currently exist on ReadySet to a file'
     task dump: :environment do
       Rails.application.eager_load!
@@ -73,20 +132,25 @@ namespace :readyset do
     end
   end
 
-  desc 'Creates caches for all of the supported queries on ReadySet'
-  task cache_supported_queries: :environment do
-    Readyset::Query.cache_all_supported!
+  desc 'Prints status information about ReadySet'
+  task status: :environment do
+    Rails.application.eager_load!
+
+    rows = Readyset.raw_query('SHOW READYSET STATUS').
+      map { |result| [result['name'], result['value']] }
+    table = Terminal::Table.new(rows: rows)
+
+    puts table
   end
 
-  desc 'Drops all the caches on ReadySet'
-  task drop_all_caches: :environment do
-    Readyset::Query.drop_all_caches!
-  end
+  desc 'Prints information about the tables known to ReadySet'
+  task tables: :environment do
+    Rails.application.eager_load!
 
-  desc 'Prints a list of all the cached queries on ReadySet'
-  task all_caches: :environment do
-    Readyset::Query.all_cached.each do |query|
-      puts query.inspect
-    end
+    rows = Readyset.raw_query('SHOW READYSET TABLES').
+      map { |result| [result['table'], result['status'], result['description']] }
+    table = Terminal::Table.new(headings: [:table, :status, :description], rows: rows)
+
+    puts table
   end
 end

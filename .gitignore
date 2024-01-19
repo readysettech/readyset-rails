@@ -10,4 +10,5 @@
 # rspec failure tracking
 .rspec_status
 Gemfile.lock
+spec/internal/db/readyset_caches.rb
 spec/internal/tmp/
