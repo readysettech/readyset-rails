@@ -50,7 +50,7 @@ RSpec.describe 'readyset.rake' do
       end
 
       describe 'drop_all' do
-        it 'removes the cache with the given name' do
+        it 'removes all the caches on ReadySet' do
           build_and_create_cache(:cached_query)
           build_and_create_cache(:cached_query_2)
 
