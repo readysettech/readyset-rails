@@ -89,6 +89,9 @@ out via our [community Slack](https://join.slack.com/t/readysetcommunity/shared_
        adapter: readyset
        host: "127.0.0.1"
        port: 5433
+       # This setting tells Rails that there's no need to run migrations or other database
+       # administration tasks against ReadySet
+       database_tasks: false
    ```
    You can verify that ReadySet is up and your application is connected by
    running `rails readyset:status`:
