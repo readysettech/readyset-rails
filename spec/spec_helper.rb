@@ -8,9 +8,7 @@ require 'combustion'
 require 'factory_bot'
 require_relative 'shared_examples'
 
-Combustion.initialize! :action_controller, :active_record, database_reset: false do
-  # config.eager_load = true
-end
+Combustion.initialize! :action_controller, :active_record, database_reset: false
 
 require 'readyset'
 
