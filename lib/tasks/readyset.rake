@@ -6,8 +6,8 @@ require 'terminal-table'
 namespace :readyset do
   desc 'Creates a cache from the given query ID'
   task :create_cache, [:id] => :environment do |_, args|
-    if args.first
-      Readyset.create_cache!(id: args.first)
+    if args.key?(:id)
+      Readyset.create_cache!(id: args[:id])
     else
       puts 'A query ID must be passed to this task'
     end
@@ -16,8 +16,8 @@ namespace :readyset do
   desc 'Creates a cache from the given query ID whose queries will never fall back to the ' \
     'primary database'
   task :create_cache_always, [:id] => :environment do |_, args|
-    if args.first
-      Readyset.create_cache!(id: args.first, always: true)
+    if args.key?(:id)
+      Readyset.create_cache!(id: args[:id], always: true)
     else
       puts 'A query ID must be passed to this task'
     end
@@ -68,8 +68,8 @@ namespace :readyset do
   namespace :caches do
     desc 'Drops the cache with the given name'
     task :drop, [:name] => :environment do |_, args|
-      if args.first
-        Readyset.drop_cache!(args.first)
+      if args.key?(:name)
+        Readyset.drop_cache!(args[:name])
       else
         puts 'A cache name must be passed to this task'
       end

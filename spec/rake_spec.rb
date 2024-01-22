@@ -16,7 +16,7 @@ RSpec.describe 'readyset.rake' do
           query = build_and_execute_proxied_query(:proxied_query)
           build_and_execute_proxied_query(:proxied_query_2)
 
-          Rake::Task['readyset:create_cache'].execute([query.id])
+          Rake::Task['readyset:create_cache'].execute(Rake::TaskArguments.new([:id], [query.id]))
 
           caches = Readyset::Query::CachedQuery.all
           expect(caches).to eq([build(:cached_query)])
@@ -37,7 +37,8 @@ RSpec.describe 'readyset.rake' do
           query = build_and_execute_proxied_query(:proxied_query)
           build_and_execute_proxied_query(:proxied_query_2)
 
-          Rake::Task['readyset:create_cache_always'].execute([query.id])
+          Rake::Task['readyset:create_cache_always'].
+            execute(Rake::TaskArguments.new([:id], [query.id]))
 
           caches = Readyset::Query::CachedQuery.all
           expect(caches).to eq([build(:cached_query, always: true)])
@@ -76,7 +77,8 @@ RSpec.describe 'readyset.rake' do
           it 'removes the cache with the given name' do
             cache = build_and_create_cache(:cached_query)
 
-            Rake::Task['readyset:caches:drop'].execute([cache.id])
+            Rake::Task['readyset:caches:drop'].
+              execute(Rake::TaskArguments.new([:name], [cache.name]))
 
             caches = Readyset::Query::CachedQuery.all
             expect(caches.size).to eq(0)
