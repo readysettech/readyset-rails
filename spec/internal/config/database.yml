@@ -11,5 +11,6 @@ test:
     port: 5432
   readyset:
     <<: *default
+    database_tasks: false
     port: 5433
 

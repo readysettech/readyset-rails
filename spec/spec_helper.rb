@@ -6,12 +6,13 @@ Bundler.setup
 
 require 'combustion'
 require 'factory_bot'
-require 'readyset'
 require_relative 'shared_examples'
 
 Combustion.initialize! :action_controller, :active_record, database_reset: false do
   config.eager_load = true
 end
+
+require 'readyset'
 
 RSpec.configure do |config|
   # Enable flags like --only-failures and --next-failure
