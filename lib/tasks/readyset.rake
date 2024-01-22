@@ -6,8 +6,6 @@ require 'terminal-table'
 namespace :readyset do
   desc 'Creates a cache from the given query ID'
   task :create_cache, [:id] => :environment do |_, args|
-    Rails.application.eager_load!
-
     if args.first
       Readyset.create_cache!(id: args.first)
     else
@@ -18,8 +16,6 @@ namespace :readyset do
   desc 'Creates a cache from the given query ID whose queries will never fall back to the ' \
     'primary database'
   task :create_cache_always, [:id] => :environment do |_, args|
-    Rails.application.eager_load!
-
     if args.first
       Readyset.create_cache!(id: args.first, always: true)
     else
@@ -29,8 +25,6 @@ namespace :readyset do
 
   desc 'Prints a list of all the queries that ReadySet has proxied'
   task proxied_queries: :environment do
-    Rails.application.eager_load!
-
     rows = Readyset::Query::ProxiedQuery.all.map do |q|
       [q.id, q.text, q.supported, q.count]
     end
@@ -42,22 +36,16 @@ namespace :readyset do
   namespace :proxied_queries do
     desc 'Creates caches for all of the supported queries on ReadySet'
     task cache_all_supported: :environment do
-      Rails.application.eager_load!
-
       Readyset::Query::ProxiedQuery.cache_all_supported!
     end
 
     desc 'Clears the list of proxied queries on ReadySet'
     task drop_all: :environment do
-      Rails.application.eager_load!
-
       Readyset.raw_query('DROP ALL PROXIED QUERIES')
     end
 
     desc 'Prints a list of all the queries that ReadySet has proxied that can be cached'
     task supported: :environment do
-      Rails.application.eager_load!
-
       rows = Readyset::Query::ProxiedQuery.all.
         select { |query| query.supported == :yes }.
         map { |q| [q.id, q.text, q.count] }
@@ -69,8 +57,6 @@ namespace :readyset do
 
   desc 'Prints a list of all the cached queries on ReadySet'
   task caches: :environment do
-    Rails.application.eager_load!
-
     rows = Readyset::Query::CachedQuery.all.map do |q|
       [q.id, q.name, q.text, q.always, q.count]
     end
@@ -82,8 +68,6 @@ namespace :readyset do
   namespace :caches do
     desc 'Drops the cache with the given name'
     task :drop, [:name] => :environment do |_, args|
-      Rails.application.eager_load!
-
       if args.first
         Readyset.drop_cache!(args.first)
       else
@@ -93,15 +77,11 @@ namespace :readyset do
 
     desc 'Drops all the caches on ReadySet'
     task drop_all: :environment do
-      Rails.application.eager_load!
-
       Readyset::Query::CachedQuery.drop_all!
     end
 
     desc 'Dumps the set of caches that currently exist on ReadySet to a file'
     task dump: :environment do
-      Rails.application.eager_load!
-
       template = File.read(File.join(File.dirname(__FILE__), '../templates/caches.rb.tt'))
 
       queries = Readyset::Query::CachedQuery.all
@@ -114,8 +94,6 @@ namespace :readyset do
     desc 'Synchronizes the caches on ReadySet such that the caches on ReadySet match those ' \
       'listed in db/readyset_caches.rb'
     task migrate: :environment do
-      Rails.application.eager_load!
-
       file = Readyset.configuration.migration_path
 
       # We load the definition of the `Readyset::Caches` subclass in the context of a
@@ -166,8 +144,6 @@ namespace :readyset do
 
   desc 'Prints status information about ReadySet'
   task status: :environment do
-    Rails.application.eager_load!
-
     rows = Readyset.raw_query('SHOW READYSET STATUS').
       map { |result| [result['name'], result['value']] }
     table = Terminal::Table.new(rows: rows)
@@ -177,8 +153,6 @@ namespace :readyset do
 
   desc 'Prints information about the tables known to ReadySet'
   task tables: :environment do
-    Rails.application.eager_load!
-
     rows = Readyset.raw_query('SHOW READYSET TABLES').
       map { |result| [result['table'], result['status'], result['description']] }
     table = Terminal::Table.new(headings: [:table, :status, :description], rows: rows)
