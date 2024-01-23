@@ -36,7 +36,6 @@ RSpec.describe Readyset::Railtie do
         allow(Rails).to receive(:env).and_return(rails_env)
         Readyset::Railtie.setup_query_annotator
 
-
         # Verify
         expect(Rails.configuration.active_record.query_log_tags).to include(
           {

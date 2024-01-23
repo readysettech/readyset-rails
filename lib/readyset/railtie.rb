@@ -50,7 +50,7 @@ module Readyset
           Rails.configuration.active_record.query_log_tags << {
             destination: ->(context) do
               ActiveRecord::Base.connection_db_config.name
-            end
+            end,
           }
         else
           Rails.logger.warn 'Query log tags are currently disabled.' \
