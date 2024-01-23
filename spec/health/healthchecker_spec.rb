@@ -129,12 +129,12 @@ RSpec.describe Readyset::Health::Healthchecker do
   private
 
   def build_healthchecker(healthcheck_interval: 5.seconds)
-    Readyset::Health::Healthchecker.new(
-      healthcheck_interval: healthcheck_interval,
-      error_window_period: error_window_period,
-      error_window_size: error_window_size,
-      shard: :readyset
-    )
+    config = ActiveSupport::OrderedOptions.new
+    config.healthcheck_interval = healthcheck_interval
+    config.error_window_period = error_window_period
+    config.error_window_size = error_window_size
+
+    Readyset::Health::Healthchecker.new(config, shard: :readyset)
   end
 
   def error_window_period

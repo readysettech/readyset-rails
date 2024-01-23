@@ -12,14 +12,16 @@ module Readyset
     class Healthchecker
       UNHEALTHY_ERRORS = [::PG::UnableToSend, ::PG::ConnectionBad].freeze
 
-      def initialize(healthcheck_interval:, error_window_period:, error_window_size:, shard:)
+      def initialize(config, shard:)
         @healthy = Concurrent::AtomicBoolean.new(true)
-        @healthcheck_interval = healthcheck_interval
+        @healthcheck_interval = config.healthcheck_interval!
         @healthchecks = Health::Healthchecks.new(shard: shard)
         @lock = Mutex.new
         @shard = shard
-        @window_counter = Readyset::Utils::WindowCounter.
-          new(window_size: error_window_size, time_period: error_window_period)
+        @window_counter = Readyset::Utils::WindowCounter.new(
+          window_size: config.error_window_size!,
+          time_period: config.error_window_period!,
+        )
       end
 
       # Returns true only if the connection to ReadySet is healthy. ReadySet's health is gauged by

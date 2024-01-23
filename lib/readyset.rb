@@ -146,9 +146,7 @@ module Readyset
 
   def self.healthchecker
     @healthchecker ||= Readyset::Health::Healthchecker.new(
-      healthcheck_interval: config.failover_healthcheck_interval,
-      error_window_period: config.failover_error_window_period,
-      error_window_size: config.failover_error_window_size,
+      config.failover,
       shard: shard,
     )
   end
