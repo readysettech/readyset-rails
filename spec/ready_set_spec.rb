@@ -336,16 +336,6 @@ RSpec.describe Readyset do
     # NOTE: If query tags aren't available, it will annotate anything.
     # Adding a feature toggle via config would be redundant.
     context 'when query tags are available' do
-      it 'adds a custom tag to Rails.configuration.active_record.query_log_tags' do
-        expect(Rails.configuration.active_record.query_log_tags).to include(
-          {
-            destination: ->(context) do
-              ActiveRecord::Base.connection_db_config.name
-            end,
-          }
-        )
-      end
-
       it 'annotates queries passing through Readyset.route' do
         # Setup - set up custom logger
         log = StringIO.new

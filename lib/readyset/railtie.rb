@@ -45,7 +45,7 @@ module Readyset
 
     def setup_query_annotator
       config.after_initialize do
-        if Rails.env.development?
+        if Rails.env.development? || Rails.env.test?
           Rails.configuration.active_record.query_log_tags ||= []
           Rails.configuration.active_record.query_log_tags << {
             destination: ->(context) do

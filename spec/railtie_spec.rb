@@ -36,13 +36,14 @@ RSpec.describe Readyset::Railtie do
         allow(Rails).to receive(:env).and_return(rails_env)
         Readyset::Railtie.setup_query_annotator
 
-        # Exercise
-        # Here we are assuming that Readyset::QueryAnnotator.routing_to_readyset? returns a value
-        allow(Readyset::QueryAnnotator).to receive(:routing_to_readyset?).and_return(true)
 
         # Verify
         expect(Rails.configuration.active_record.query_log_tags).to include(
-          a_hash_including(routed_to_readyset?: an_instance_of(Proc))
+          {
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end,
+          }
         )
       end
     end
@@ -51,7 +52,7 @@ RSpec.describe Readyset::Railtie do
       it 'logs a warning about query log tags being disabled or unavailable' do
         # Setup
         # Rails.env
-        rails_env = 'test'.inquiry # Allows it to respond to development?
+        rails_env = 'production'.inquiry # Should only be available in a development environment
         allow(Rails).to receive(:env).and_return(rails_env)
         allow(Rails.logger).to receive(:warn)
 
