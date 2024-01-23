@@ -318,18 +318,35 @@ RSpec.describe Readyset do
         allow(healthchecker).to receive(:healthy?).and_return(false)
       end
 
-      it 'routes queries to their original destination' do
-        Readyset.route(prevent_writes: false) { Cat.where(name: 'whiskers') }
+      context 'when the block contains a read query' do
+        it 'executes the read against ReadySet' do
+          expected_cache = build_and_create_cache(:cached_query)
 
-        proxied_queries = Readyset::Query::ProxiedQuery.all
-        expect(proxied_queries).to be_empty
+          results = Readyset.route(prevent_writes: false) do
+            ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
+          end
+
+          cache = Readyset::Query::CachedQuery.
+            send(:from_readyset_result, **results.first.symbolize_keys)
+          expect(cache).to eq(expected_cache)
+        end
       end
     end
 
     # NOTE: If query tags aren't available, it will annotate anything.
     # Adding a feature toggle via config would be redundant.
     context 'when query tags are available' do
-      it 'annotates SQL queries with a "routed to ReadySet" tag' do
+      it 'adds a custom tag to Rails.configuration.active_record.query_log_tags' do
+        expect(Rails.configuration.active_record.query_log_tags).to include(
+          {
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end,
+          }
+        )
+      end
+
+      it 'annotates queries passing through Readyset.route' do
         # Setup - set up custom logger
         log = StringIO.new
         custom_logger = ActiveSupport::Logger.new(log)
@@ -341,58 +358,7 @@ RSpec.describe Readyset do
 
         # Verify - Check if the query log contains the expected annotation
         log.rewind # To latest log.
-        expect(log.read).to match(/routed_to_readyset\?[:=]true/)
-      end
-
-      # Only annotates ReadySet queries passing through .route
-      context 'when routing queries' do
-        it 'sets routing_to_readyset to true at the beginning of the method' do
-          # Setup - Remember initial state
-          starting_state = Readyset::QueryAnnotator.routing_to_readyset?
-
-          # Exercise - Call the .route method and check the state within the block
-          in_progress_state = nil
-          Readyset.route { in_progress_state = Readyset::QueryAnnotator.routing_to_readyset? }
-
-          # Verify - Check if routing_to_readyset was true inside the block
-          expect(in_progress_state).to eq(true)
-
-          # Teardown - Restore initial state
-          Readyset::QueryAnnotator.routing_to_readyset = starting_state
-        end
-
-        # Without this, all queries in the Rails app
-        # would be annotated as true.
-        it 'sets routing_to_readyset to false at the end of the method' do
-          # Setup - Remember initial state
-          starting_state = Readyset::QueryAnnotator.routing_to_readyset?
-
-          # Exercise - Call the .route method
-          Readyset.route { Cat.where(name: 'whiskers') }
-
-          # Verify - Check if routing_to_readyset was reset to false
-          expect(Readyset::QueryAnnotator.routing_to_readyset?).to eq(false)
-
-          # Teardown - Restore initial state
-          Readyset::QueryAnnotator.routing_to_readyset = starting_state
-        end
-      end
-
-      context 'when not using .route' do
-        it 'flags #routed_to_readyset? as false' do
-          # Setup - set up custom logger
-          log = StringIO.new
-          custom_logger = ActiveSupport::Logger.new(log)
-          allow(ActiveRecord::Base).to receive(:logger).and_return(custom_logger)
-
-          # Exercise - Run a query to be routed and tagged
-          query = Cat.where(name: 'whiskers')
-
-          ActiveRecord::Base.connection.execute(query.to_sql)
-          # Verify - Check if the query log contains the expected annotation
-          log.rewind # To latest log.
-          expect(log.read).not_to match(/routed_to_readyset\?[:=]true/)
-        end
+        expect(log.read).to match(/destination[:=]readyset/)
       end
     end
   end

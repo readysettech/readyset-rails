@@ -48,9 +48,9 @@ module Readyset
         if Rails.env.development?
           Rails.configuration.active_record.query_log_tags ||= []
           Rails.configuration.active_record.query_log_tags << {
-            routed_to_readyset?: ->(context) do
-              Readyset::QueryAnnotator.routing_to_readyset?
-            end,
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end
           }
         else
           Rails.logger.warn 'Query log tags are currently disabled.' \
