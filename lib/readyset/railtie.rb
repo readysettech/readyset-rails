@@ -20,15 +20,14 @@ module Readyset
     initializer 'readyset.connection_pools' do |app|
       ActiveSupport.on_load(:after_initialize) do
         shard = Readyset.config.shard
-        config = ActiveRecord::Base.
-          configurations.
-          configs_for(name: shard.to_s, env_name: Rails.env, include_hidden: true).
-          configuration_hash
 
-        ActiveRecord::Base.connection_handler.
-          establish_connection(config, role: ActiveRecord.reading_role, shard: shard)
-        ActiveRecord::Base.connection_handler.
-          establish_connection(config, role: ActiveRecord.writing_role, shard: shard)
+        ActiveRecord::Base.connected_to(role: ActiveRecord.reading_role, shard: shard) do
+          ActiveRecord::Base.establish_connection(:readyset)
+        end
+
+        ActiveRecord::Base.connected_to(role: ActiveRecord.writing_role, shard: shard) do
+          ActiveRecord::Base.establish_connection(:readyset)
+        end
       end
     end
 
