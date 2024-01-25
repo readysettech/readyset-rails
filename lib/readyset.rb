@@ -1,8 +1,10 @@
 # lib/readyset.rb
 
+require 'active_record/connection_adapters/readyset_adapter'
 require 'readyset/caches'
 require 'readyset/configuration'
 require 'readyset/controller_extension'
+require 'readyset/health/healthchecker'
 require 'readyset/model_extension'
 require 'readyset/explain'
 require 'readyset/query'
@@ -10,6 +12,7 @@ require 'readyset/query/cached_query'
 require 'readyset/query/proxied_query'
 require 'readyset/railtie' if defined?(Rails::Railtie)
 require 'readyset/relation_extension'
+require 'readyset/utils/window_counter'
 
 # The Readyset module provides functionality to integrate ReadySet caching
 # with Ruby on Rails applications.
@@ -116,12 +119,21 @@ module Readyset
   # @yield a block whose queries should be routed to ReadySet.
   # @return the value of the last line of the block.
   def self.route(prevent_writes: true, &block)
-    if prevent_writes
-      ActiveRecord::Base.connected_to(role: reading_role, shard: shard, prevent_writes: true,
-        &block)
+    if healthchecker.healthy?
+      begin
+        if prevent_writes
+          ActiveRecord::Base.connected_to(role: reading_role, shard: shard, prevent_writes: true,
+            &block)
+        else
+          ActiveRecord::Base.connected_to(role: writing_role, shard: shard, prevent_writes: false,
+            &block)
+        end
+      rescue => e
+        healthchecker.process_exception(e)
+        raise e
+      end
     else
-      ActiveRecord::Base.connected_to(role: writing_role, shard: shard, prevent_writes: false,
-        &block)
+      yield
     end
   end
 
@@ -131,6 +143,14 @@ module Readyset
   class << self
     private(*delegate(:shard, to: :configuration))
   end
+
+  def self.healthchecker
+    @healthchecker ||= Readyset::Health::Healthchecker.new(
+      config.failover,
+      shard: shard,
+    )
+  end
+  private_class_method :healthchecker
 
   # Returns the reading role for ActiveRecord connections.
   # @return [Symbol] the reading role.

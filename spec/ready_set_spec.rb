@@ -211,78 +211,118 @@ RSpec.describe Readyset do
   end
 
   describe '.route' do
-    context 'when prevent_writes is true' do
-      context 'when the block contains a write query' do
-        it 'raises an ActiveRecord::ReadOnlyError' do
-          expect { Readyset.route(prevent_writes: true) { create(:cat) } }.
-            to raise_error(ActiveRecord::ReadOnlyError)
+    context 'when the healthchecker reports that ReadySet is healthy' do
+      before do
+        healthchecker = Readyset.send(:healthchecker)
+        allow(healthchecker).to receive(:healthy?).and_return(true)
+      end
+
+      context 'when an exception is raised during the execution of the block' do
+        it 'passes the exception to the healthchecker' do
+          error = StandardError.new
+          allow(Readyset.send(:healthchecker)).to receive(:process_exception).with(error)
+          begin
+            Readyset.route do
+              raise error
+            end
+          rescue
+          end
+
+          expect(Readyset.send(:healthchecker)).to have_received(:process_exception).with(error)
+        end
+
+        it 're-raises the error' do
+          expect { Readyset.route { raise StandardError } }.to raise_error(StandardError)
         end
       end
 
-      context 'when the block contains a read query' do
-        it 'returns the result of the block' do
-          expected_cat = create(:cat)
-
-          cat = Readyset.route(prevent_writes: true) do
-            Cat.find(expected_cat.id)
+      context 'when prevent_writes is true' do
+        context 'when the block contains a write query' do
+          it 'raises an ActiveRecord::ReadOnlyError' do
+            expect { Readyset.route(prevent_writes: true) { create(:cat) } }.
+              to raise_error(ActiveRecord::ReadOnlyError)
           end
-
-          expect(cat).to eq(expected_cat)
         end
 
-        it 'executes the query against ReadySet' do
-          expected_cache = build_and_create_cache(:cached_query)
+        context 'when the block contains a read query' do
+          it 'returns the result of the block' do
+            expected_cat = create(:cat)
 
-          result = Readyset.route(prevent_writes: true) do
-            ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
+            cat = Readyset.route(prevent_writes: true) do
+              Cat.find(expected_cat.id)
+            end
+
+            expect(cat).to eq(expected_cat)
           end
 
-          expect(result.size).to eq(1)
-          cache = Readyset::Query::CachedQuery.
-            send(:from_readyset_result, **result.first.symbolize_keys)
-          expect(cache).to eq(expected_cache)
+          it 'executes the query against ReadySet' do
+            expected_cache = build_and_create_cache(:cached_query)
+
+            result = Readyset.route(prevent_writes: true) do
+              ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
+            end
+
+            expect(result.size).to eq(1)
+            cache = Readyset::Query::CachedQuery.
+              send(:from_readyset_result, **result.first.symbolize_keys)
+            expect(cache).to eq(expected_cache)
+          end
+        end
+      end
+
+      context 'when prevent_writes is false' do
+        context 'when the block contains a write query' do
+          it 'returns the result of the block' do
+            result = Readyset.route(prevent_writes: false) do
+              create(:cat)
+              'test'
+            end
+
+            expect(result).to eq('test')
+          end
+
+          it 'executes the write against ReadySet' do
+            proxied_query = build(:proxied_query)
+
+            Readyset.route(prevent_writes: false) do
+              sanitized = ActiveRecord::Base.
+                sanitize_sql_array(['CREATE CACHE FROM %s', proxied_query.text])
+              ActiveRecord::Base.connection.execute(sanitized)
+            end
+
+            expected_cache = build(:cached_query)
+            cache = Readyset::Query::CachedQuery.find(expected_cache.id)
+            expect(cache).to eq(expected_cache)
+          end
+        end
+
+        context 'when the block contains a read query' do
+          it 'executes the read against ReadySet' do
+            expected_cache = build_and_create_cache(:cached_query)
+
+            results = Readyset.route(prevent_writes: false) do
+              ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
+            end
+
+            cache = Readyset::Query::CachedQuery.
+              send(:from_readyset_result, **results.first.symbolize_keys)
+            expect(cache).to eq(expected_cache)
+          end
         end
       end
     end
 
-    context 'when prevent_writes is false' do
-      context 'when the block contains a write query' do
-        it 'returns the result of the block' do
-          result = Readyset.route(prevent_writes: false) do
-            create(:cat)
-            'test'
-          end
-
-          expect(result).to eq('test')
-        end
-
-        it 'executes the write against ReadySet' do
-          proxied_query = build(:proxied_query)
-
-          Readyset.route(prevent_writes: false) do
-            sanitized = ActiveRecord::Base.
-              sanitize_sql_array(['CREATE CACHE FROM %s', proxied_query.text])
-            ActiveRecord::Base.connection.execute(sanitized)
-          end
-
-          expected_cache = build(:cached_query)
-          cache = Readyset::Query::CachedQuery.find(expected_cache.id)
-          expect(cache).to eq(expected_cache)
-        end
+    context 'when the healthchecker reports that ReadySet is unhealthy' do
+      before do
+        healthchecker = Readyset.send(:healthchecker)
+        allow(healthchecker).to receive(:healthy?).and_return(false)
       end
 
-      context 'when the block contains a read query' do
-        it 'executes the read against ReadySet' do
-          expected_cache = build_and_create_cache(:cached_query)
+      it 'routes queries to their original destination' do
+        Readyset.route(prevent_writes: false) { Cat.where(name: 'whiskers') }
 
-          results = Readyset.route(prevent_writes: false) do
-            ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
-          end
-
-          cache = Readyset::Query::CachedQuery.
-            send(:from_readyset_result, **results.first.symbolize_keys)
-          expect(cache).to eq(expected_cache)
-        end
+        proxied_queries = Readyset::Query::ProxiedQuery.all
+        expect(proxied_queries).to be_empty
       end
     end
   end
