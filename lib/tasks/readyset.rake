@@ -41,7 +41,7 @@ namespace :readyset do
 
     desc 'Clears the list of proxied queries on ReadySet'
     task drop_all: :environment do
-      Readyset.raw_query('DROP ALL PROXIED QUERIES')
+      Readyset.raw_query('DROP ALL PROXIED QUERIES'.freeze)
     end
 
     desc 'Prints a list of all the queries that ReadySet has proxied that can be cached'
@@ -144,7 +144,7 @@ namespace :readyset do
 
   desc 'Prints status information about ReadySet'
   task status: :environment do
-    rows = Readyset.raw_query('SHOW READYSET STATUS').
+    rows = Readyset.raw_query('SHOW READYSET STATUS'.freeze).
       map { |result| [result['name'], result['value']] }
     table = Terminal::Table.new(rows: rows)
 
@@ -153,7 +153,7 @@ namespace :readyset do
 
   desc 'Prints information about the tables known to ReadySet'
   task tables: :environment do
-    rows = Readyset.raw_query('SHOW READYSET TABLES').
+    rows = Readyset.raw_query('SHOW READYSET TABLES'.freeze).
       map { |result| [result['table'], result['status'], result['description']] }
     table = Terminal::Table.new(headings: [:table, :status, :description], rows: rows)
 
