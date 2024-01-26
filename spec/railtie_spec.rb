@@ -1,6 +1,6 @@
 # spec/railtie_spec.rb
 
-require 'rails_helper'
+require 'spec_helper'
 
 RSpec.describe Readyset::Railtie do
   describe 'readyset.action_controller', type: :controller do
@@ -25,6 +25,131 @@ RSpec.describe Readyset::Railtie do
   describe 'readyset.active_record' do
     it 'includes RelationExtension into ActiveRecord::Relation' do
       expect(ActiveRecord::Relation.ancestors).to include(Readyset::RelationExtension)
+    end
+  end
+
+  describe 'readyset.query_annotator' do
+    context 'when Rails.env.development? is true' do
+      context 'when query log tags are enabled' do
+        it 'adds a query_log_tag for routing to Readyset' do
+          # Setup
+          rails_env = 'development'.inquiry # Allows it to respond to development?
+          allow(Rails).to receive(:env).and_return(rails_env)
+          allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+            and_return(true)
+          expected_tag = {
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end,
+          }
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<).with(expected_tag)
+          Readyset::Railtie.setup_query_annotator
+
+          # Verify
+          expect(Rails.configuration.active_record.query_log_tags).to have_received(:<<).
+            with(expected_tag)
+        end
+      end
+
+      context 'when query log tags are not enabled' do
+        it 'logs a warning about query log tags being disabled' do
+          # Setup
+          rails_env = 'development'.inquiry # Allows it to respond to development?
+          allow(Rails).to receive(:env).and_return(rails_env)
+          allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+            and_return(false)
+
+          allow(Rails.logger).to receive(:warn).with(anything)
+
+          # Execute
+          Readyset::Railtie.setup_query_annotator
+
+          # Verify
+          expect(Rails.logger).to have_received(:warn).with(anything)
+        end
+
+        it 'does not add a query_log_tag for routing to Readyset' do
+          # Setup
+          rails_env = 'development'.inquiry # Allows it to respond to development?
+          allow(Rails).to receive(:env).and_return(rails_env)
+          allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+            and_return(false)
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<)
+          Readyset::Railtie.setup_query_annotator
+
+          # Verify
+          expect(Rails.configuration.active_record.query_log_tags).not_to have_received(:<<)
+        end
+      end
+    end
+
+    context 'when Rails.env.test? is true' do
+      context 'when query log tags are enabled' do
+        it 'adds a query_log_tag for routing to Readyset' do
+          # Setup
+          rails_env = 'test'.inquiry # Allows it to respond to test?
+          allow(Rails).to receive(:env).and_return(rails_env)
+          allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+            and_return(true)
+          expected_tag = {
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end,
+          }
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<).with(expected_tag)
+          Readyset::Railtie.setup_query_annotator
+
+          # Verify
+          expect(Rails.configuration.active_record.query_log_tags).to have_received(:<<).
+            with(expected_tag)
+        end
+      end
+
+      context 'when query log tags are not enabled' do
+        it 'logs a warning about query log tags being disabled' do
+          # Setup
+          rails_env = 'test'.inquiry # Allows it to respond to test?
+          allow(Rails).to receive(:env).and_return(rails_env)
+          allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+            and_return(false)
+
+          allow(Rails.logger).to receive(:warn).with(anything)
+
+          # Execute
+          Readyset::Railtie.setup_query_annotator
+
+          # Verify
+          expect(Rails.logger).to have_received(:warn).with(anything)
+        end
+
+        it 'does not add a query_log_tag for routing to Readyset' do
+          # Setup
+          rails_env = 'test'.inquiry # Allows it to respond to development?
+          allow(Rails).to receive(:env).and_return(rails_env)
+          allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+            and_return(false)
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<)
+          Readyset::Railtie.setup_query_annotator
+
+          # Verify
+          expect(Rails.configuration.active_record.query_log_tags).not_to have_received(:<<)
+        end
+      end
+    end
+
+    context 'when Rails.env.development? and Rails.env.test? are both false' do
+      it 'does not add a query_log_tag for routing to Readyset' do
+        # Setup
+        rails_env = 'production'.inquiry # Allows it to respond to development?
+        allow(Rails).to receive(:env).and_return(rails_env)
+        allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
+          and_return(true)
+        allow(Rails.configuration.active_record.query_log_tags).to receive(:<<)
+        Readyset::Railtie.setup_query_annotator
+
+        # Verify
+        expect(Rails.configuration.active_record.query_log_tags).not_to have_received(:<<)
+      end
     end
   end
 

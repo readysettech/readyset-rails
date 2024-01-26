@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'spec_helper'
+require 'rails_helper'
 
 RSpec.describe Readyset do
   it 'has a version number' do
@@ -323,6 +323,25 @@ RSpec.describe Readyset do
 
         proxied_queries = Readyset::Query::ProxiedQuery.all
         expect(proxied_queries).to be_empty
+      end
+    end
+
+    # NOTE: If query tags aren't available, it will annotate anything.
+    # Adding a feature toggle via config would be redundant.
+    context 'when query tags are available' do
+      it 'annotates queries passing through Readyset.route' do
+        # Setup - set up custom logger
+        log = StringIO.new
+        custom_logger = ActiveSupport::Logger.new(log)
+        allow(ActiveRecord::Base).to receive(:logger).and_return(custom_logger)
+
+        # Exercise - Run a query to be routed and tagged
+        query = Cat.where(name: 'whiskers')
+        Readyset.route { query }
+
+        # Verify - Check if the query log contains the expected annotation
+        log.rewind # To latest log.
+        expect(log.read).to match(/destination[:=]readyset/)
       end
     end
   end
