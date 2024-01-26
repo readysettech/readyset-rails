@@ -9,7 +9,7 @@ namespace :readyset do
     if args.key?(:id)
       Readyset.create_cache!(id: args[:id])
     else
-      puts 'A query ID must be passed to this task'
+      Rails.logger.error 'A query ID must be passed to this task'
     end
   end
 
@@ -19,7 +19,7 @@ namespace :readyset do
     if args.key?(:id)
       Readyset.create_cache!(id: args[:id], always: true)
     else
-      puts 'A query ID must be passed to this task'
+      Rails.logger.error 'A query ID must be passed to this task'
     end
   end
 
@@ -30,7 +30,7 @@ namespace :readyset do
     end
     table = Terminal::Table.new(headings: [:id, :text, :supported, :count], rows: rows)
 
-    puts table
+    Rails.logger.info table.to_s
   end
 
   namespace :proxied_queries do
@@ -51,7 +51,7 @@ namespace :readyset do
         map { |q| [q.id, q.text, q.count] }
       table = Terminal::Table.new(headings: [:id, :text, :count], rows: rows)
 
-      puts table
+      Rails.logger.info table.to_s
     end
   end
 
@@ -62,7 +62,7 @@ namespace :readyset do
     end
     table = Terminal::Table.new(headings: [:id, :name, :text, :always, :count], rows: rows)
 
-    puts table
+    Rails.logger.info table.to_s
   end
 
   namespace :caches do
@@ -71,7 +71,7 @@ namespace :readyset do
       if args.key?(:name)
         Readyset.drop_cache!(args[:name])
       else
-        puts 'A cache name must be passed to this task'
+        Rails.logger.error 'A cache name must be passed to this task'
       end
     end
 
@@ -113,7 +113,6 @@ namespace :readyset do
         creating = 'creating'.green
         print "#{dropping} #{to_drop.size} caches and #{creating} #{to_create.size} caches. " \
           'Continue? (y/n) '
-        $stdout.flush
         y_or_n = STDIN.gets.strip
 
         if y_or_n == 'y'
@@ -137,7 +136,7 @@ namespace :readyset do
           end
         end
       else
-        puts 'Nothing to do'
+        Rails.logger.info 'Nothing to do'
       end
     end
   end
@@ -148,7 +147,7 @@ namespace :readyset do
       map { |result| [result['name'], result['value']] }
     table = Terminal::Table.new(rows: rows)
 
-    puts table
+    Rails.logger.info table.to_s
   end
 
   desc 'Prints information about the tables known to ReadySet'
@@ -157,6 +156,6 @@ namespace :readyset do
       map { |result| [result['table'], result['status'], result['description']] }
     table = Terminal::Table.new(headings: [:table, :status, :description], rows: rows)
 
-    puts table
+    Rails.logger.info table.to_s
   end
 end

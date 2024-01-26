@@ -25,8 +25,12 @@ RSpec.describe 'readyset.rake' do
 
       context 'when given no arguments' do
         it 'prints an error message' do
-          expect { Rake::Task['readyset:create_cache'].execute }.
-            to output("A query ID must be passed to this task\n").to_stdout
+          expected_message = 'A query ID must be passed to this task'
+          allow(Rails.logger).to receive(:error).with(expected_message)
+
+          Rake::Task['readyset:create_cache'].execute
+
+          expect(Rails.logger).to have_received(:error).with(expected_message)
         end
       end
     end
@@ -47,8 +51,12 @@ RSpec.describe 'readyset.rake' do
 
       context 'when given no arguments' do
         it 'prints an error message' do
-          expect { Rake::Task['readyset:create_cache_always'].execute }.
-            to output("A query ID must be passed to this task\n").to_stdout
+          expected_message = 'A query ID must be passed to this task'
+          allow(Rails.logger).to receive(:error).with(expected_message)
+
+          Rake::Task['readyset:create_cache'].execute
+
+          expect(Rails.logger).to have_received(:error).with(expected_message)
         end
       end
     end
@@ -57,7 +65,7 @@ RSpec.describe 'readyset.rake' do
       it 'prints a table with the caches that currently exist on ReadySet' do
         build_and_create_cache(:cached_query)
 
-        expected_message = <<~TABLE
+        expected_message = <<~TABLE.chomp
           +--------------------+--------------------+---------------------------------+--------+-------+
           | id                 | name               | text                            | always | count |
           +--------------------+--------------------+---------------------------------+--------+-------+
@@ -69,7 +77,11 @@ RSpec.describe 'readyset.rake' do
           |                    |                    |   ("public"."cats"."name" = $1) |        |       |
           +--------------------+--------------------+---------------------------------+--------+-------+
         TABLE
-        expect { Rake::Task['readyset:caches'].execute }.to output(expected_message).to_stdout
+        allow(Rails.logger).to receive(:info).with(expected_message)
+
+        Rake::Task['readyset:caches'].execute
+
+        expect(Rails.logger).to have_received(:info).with(expected_message)
       end
 
       describe 'drop' do
@@ -87,8 +99,12 @@ RSpec.describe 'readyset.rake' do
 
         context 'when given no arguments' do
           it 'prints an error message' do
-            expect { Rake::Task['readyset:caches:drop'].execute }.
-              to output("A cache name must be passed to this task\n").to_stdout
+            expected_message = 'A cache name must be passed to this task'
+            allow(Rails.logger).to receive(:error).with(expected_message)
+
+            Rake::Task['readyset:caches:drop'].execute
+
+            expect(Rails.logger).to have_received(:error).with(expected_message)
           end
         end
       end
@@ -209,7 +225,7 @@ RSpec.describe 'readyset.rake' do
       it 'prints a table with the queries that ReadySet has proxied' do
         build_and_execute_proxied_query(:proxied_query)
 
-        expected_message = Regexp.new <<~TABLE
+        expected_message = Regexp.new <<~TABLE.chomp
           \\+--------------------\\+------------------------\\+-----------\\+-------\\+
           \\| id                 \\| text                   \\| supported \\| count \\|
           \\+--------------------\\+------------------------\\+-----------\\+-------\\+
@@ -221,8 +237,11 @@ RSpec.describe 'readyset.rake' do
           \\|                    \\|   \\("cats"\\."name" = \\$1\\) \\|           \\| [ ]*\\|
           \\+--------------------\\+------------------------\\+-----------\\+-------\\+
         TABLE
-        expect { Rake::Task['readyset:proxied_queries'].execute }.to output(expected_message).
-          to_stdout
+        allow(Rails.logger).to receive(:info).with(expected_message)
+
+        Rake::Task['readyset:proxied_queries'].execute
+
+        expect(Rails.logger).to have_received(:info).with(expected_message)
       end
 
       describe 'cache_all_supported' do
@@ -261,7 +280,7 @@ RSpec.describe 'readyset.rake' do
             Readyset::Query::ProxiedQuery.all.all? { |query| query.supported != :pending }
           end
 
-          expected_message = Regexp.new <<~TABLE
+          expected_message = Regexp.new <<~TABLE.chomp
             \\+--------------------\\+------------------------\\+-------\\+
             \\| id                 \\| text                   \\| count \\|
             \\+--------------------\\+------------------------\\+-------\\+
@@ -273,15 +292,18 @@ RSpec.describe 'readyset.rake' do
             \\|                    \\|   \\("cats"\\."name" = \\$1\\) \\| [ ]*\\|
             \\+--------------------\\+------------------------\\+-------\\+
           TABLE
-          expect { Rake::Task['readyset:proxied_queries:supported'].execute }.
-            to output(expected_message).to_stdout
+          allow(Rails.logger).to receive(:info).with(expected_message)
+
+          Rake::Task['readyset:proxied_queries:supported'].execute
+
+          expect(Rails.logger).to have_received(:info).with(expected_message)
         end
       end
     end
 
     describe 'status' do
       it "prints a table that shows ReadySet's status" do
-        expected_message = Regexp.new <<~TABLE
+        expected_message = Regexp.new <<~TABLE.chomp
           \\+----------------------------\\+------------------------\\+
           \\| Database Connection        \\| Connected[ ]*\\|
           \\| Connection Count           \\| \\d+[ ]*\\|
@@ -293,23 +315,28 @@ RSpec.describe 'readyset.rake' do
           \\| Last started replication   \\| \\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}[ ]*\\|
           \\+----------------------------\\+------------------------\\+
         TABLE
-        expect { Rake::Task['readyset:status'].execute }.to output(expected_message).
-          to_stdout
+        allow(Rails.logger).to receive(:info).with(expected_message)
+
+        Rake::Task['readyset:status'].execute
+
+        expect(Rails.logger).to have_received(:info).with(expected_message)
       end
     end
 
     describe 'tables' do
       it 'prints a table that shows the tables known to ReadySet' do
-        expected_message = Regexp.new <<~TABLE
+        expected_message = Regexp.new <<~TABLE.chomp
           \\+---------------------------------\\+-------------\\+-------------\\+
           \\| table                           \\| status      \\| description \\|
           \\+---------------------------------\\+-------------\\+-------------\\+
           (\\| "public"\\."[\\w]*"[ ]*\\| Snapshotted \\|             \\|\n?)*
           \\+---------------------------------\\+-------------\\+-------------\\+
         TABLE
+        allow(Rails.logger).to receive(:info).with(expected_message)
 
-        expect { Rake::Task['readyset:tables'].execute }.to output(expected_message).
-          to_stdout
+        Rake::Task['readyset:tables'].execute
+
+        expect(Rails.logger).to have_received(:info).with(expected_message)
       end
     end
   end
