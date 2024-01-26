@@ -1,13 +1,87 @@
 require 'colorize'
 require 'erb'
 require 'progressbar'
+require 'terminal-table'
 
 namespace :readyset do
+  desc 'Creates a cache from the given query ID'
+  task :create_cache, [:id] => :environment do |_, args|
+    if args.key?(:id)
+      Readyset.create_cache!(id: args[:id])
+    else
+      Rails.logger.error 'A query ID must be passed to this task'
+    end
+  end
+
+  desc 'Creates a cache from the given query ID whose queries will never fall back to the ' \
+    'primary database'
+  task :create_cache_always, [:id] => :environment do |_, args|
+    if args.key?(:id)
+      Readyset.create_cache!(id: args[:id], always: true)
+    else
+      Rails.logger.error 'A query ID must be passed to this task'
+    end
+  end
+
+  desc 'Prints a list of all the queries that ReadySet has proxied'
+  task proxied_queries: :environment do
+    rows = Readyset::Query::ProxiedQuery.all.map do |q|
+      [q.id, q.text, q.supported, q.count]
+    end
+    table = Terminal::Table.new(headings: [:id, :text, :supported, :count], rows: rows)
+
+    Rails.logger.info table.to_s
+  end
+
+  namespace :proxied_queries do
+    desc 'Creates caches for all of the supported queries on ReadySet'
+    task cache_all_supported: :environment do
+      Readyset::Query::ProxiedQuery.cache_all_supported!
+    end
+
+    desc 'Clears the list of proxied queries on ReadySet'
+    task drop_all: :environment do
+      Readyset.raw_query('DROP ALL PROXIED QUERIES'.freeze)
+    end
+
+    desc 'Prints a list of all the queries that ReadySet has proxied that can be cached'
+    task supported: :environment do
+      rows = Readyset::Query::ProxiedQuery.all.
+        select { |query| query.supported == :yes }.
+        map { |q| [q.id, q.text, q.count] }
+      table = Terminal::Table.new(headings: [:id, :text, :count], rows: rows)
+
+      Rails.logger.info table.to_s
+    end
+  end
+
+  desc 'Prints a list of all the cached queries on ReadySet'
+  task caches: :environment do
+    rows = Readyset::Query::CachedQuery.all.map do |q|
+      [q.id, q.name, q.text, q.always, q.count]
+    end
+    table = Terminal::Table.new(headings: [:id, :name, :text, :always, :count], rows: rows)
+
+    Rails.logger.info table.to_s
+  end
+
   namespace :caches do
+    desc 'Drops the cache with the given name'
+    task :drop, [:name] => :environment do |_, args|
+      if args.key?(:name)
+        Readyset.drop_cache!(args[:name])
+      else
+        Rails.logger.error 'A cache name must be passed to this task'
+      end
+    end
+
+    desc 'Drops all the caches on ReadySet'
+    task drop_all: :environment do
+      Readyset::Query::CachedQuery.drop_all!
+    end
+
     desc 'Dumps the set of caches that currently exist on ReadySet to a file'
     task dump: :environment do
-      Rails.application.eager_load!
-
       template = File.read(File.join(File.dirname(__FILE__), '../templates/caches.rb.tt'))
 
       queries = Readyset::Query::CachedQuery.all
@@ -20,8 +94,6 @@ namespace :readyset do
     desc 'Synchronizes the caches on ReadySet such that the caches on ReadySet match those ' \
       'listed in db/readyset_caches.rb'
     task migrate: :environment do
-      Rails.application.eager_load!
-
       file = Readyset.configuration.migration_path
 
       # We load the definition of the `Readyset::Caches` subclass in the context of a
@@ -65,8 +137,26 @@ namespace :readyset do
           end
         end
       else
-        puts 'Nothing to do'
+        Rails.logger.info 'Nothing to do'
       end
     end
+  end
+
+  desc 'Prints status information about ReadySet'
+  task status: :environment do
+    rows = Readyset.raw_query('SHOW READYSET STATUS'.freeze).
+      map { |result| [result['name'], result['value']] }
+    table = Terminal::Table.new(rows: rows)
+
+    Rails.logger.info table.to_s
+  end
+
+  desc 'Prints information about the tables known to ReadySet'
+  task tables: :environment do
+    rows = Readyset.raw_query('SHOW READYSET TABLES'.freeze).
+      map { |result| [result['table'], result['status'], result['description']] }
+    table = Terminal::Table.new(headings: [:table, :status, :description], rows: rows)
+
+    Rails.logger.info table.to_s
   end
 end

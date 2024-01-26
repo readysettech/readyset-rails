@@ -255,7 +255,7 @@ to your database. To create a cache for a specific query, you have a few options
   Pick a query from the list that you'd like to cache, and pass the ID to the
   `rails readyset:create_cache` command like so:
   ```sh
-  rails readyset:create_cache[your_query_id]
+  rails 'readyset:create_cache[your_query_id]'
   ```
 
 Once a cache has been created for a particular query, it will persist on
@@ -268,7 +268,7 @@ rails readyset:caches
 To drop a given cache in the list printed by the above command, you can pass the
 name of the cache to the `readyset:caches:drop` Rake task like so:
 ```sh
-rails readyset:caches:drop[my_cache]
+rails 'readyset:caches:drop[my_cache]'
 ```
 You can also view the list of existing caches in an interactive form via the
 Rails console:
