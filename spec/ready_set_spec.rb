@@ -318,18 +318,11 @@ RSpec.describe Readyset do
         allow(healthchecker).to receive(:healthy?).and_return(false)
       end
 
-      context 'when the block contains a read query' do
-        it 'executes the read against ReadySet' do
-          expected_cache = build_and_create_cache(:cached_query)
+      it 'routes queries to their original destination' do
+        Readyset.route(prevent_writes: false) { Cat.where(name: 'whiskers') }
 
-          results = Readyset.route(prevent_writes: false) do
-            ActiveRecord::Base.connection.execute('SHOW CACHES').to_a
-          end
-
-          cache = Readyset::Query::CachedQuery.
-            send(:from_readyset_result, **results.first.symbolize_keys)
-          expect(cache).to eq(expected_cache)
-        end
+        proxied_queries = Readyset::Query::ProxiedQuery.all
+        expect(proxied_queries).to be_empty
       end
     end
 
