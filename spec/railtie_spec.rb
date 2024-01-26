@@ -29,12 +29,6 @@ RSpec.describe Readyset::Railtie do
   end
 
   describe 'readyset.query_annotator' do
-    after do
-      Rails.configuration.active_record.query_log_tags.reject! do |tag|
-        tag.is_a?(Hash) && tag.keys == [:destination]
-      end
-    end
-
     context 'when Rails.env.development? is true' do
       context 'when query log tags are enabled' do
         it 'adds a query_log_tag for routing to Readyset' do
@@ -43,16 +37,17 @@ RSpec.describe Readyset::Railtie do
           allow(Rails).to receive(:env).and_return(rails_env)
           allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
             and_return(true)
+          expected_tag = {
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end,
+          }
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<).with(expected_tag)
           Readyset::Railtie.setup_query_annotator
 
           # Verify
-          expect(Rails.configuration.active_record.query_log_tags).to include(
-            {
-              destination: ->(context) do
-                ActiveRecord::Base.connection_db_config.name
-              end,
-            }
-          )
+          expect(Rails.configuration.active_record.query_log_tags).to have_received(:<<).
+            with(expected_tag)
         end
       end
 
@@ -79,16 +74,11 @@ RSpec.describe Readyset::Railtie do
           allow(Rails).to receive(:env).and_return(rails_env)
           allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
             and_return(false)
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<)
           Readyset::Railtie.setup_query_annotator
 
           # Verify
-          expect(Rails.configuration.active_record.query_log_tags).not_to include(
-            {
-              destination: ->(context) do
-                ActiveRecord::Base.connection_db_config.name
-              end,
-            }
-          )
+          expect(Rails.configuration.active_record.query_log_tags).not_to have_received(:<<)
         end
       end
     end
@@ -101,16 +91,17 @@ RSpec.describe Readyset::Railtie do
           allow(Rails).to receive(:env).and_return(rails_env)
           allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
             and_return(true)
+          expected_tag = {
+            destination: ->(context) do
+              ActiveRecord::Base.connection_db_config.name
+            end,
+          }
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<).with(expected_tag)
           Readyset::Railtie.setup_query_annotator
 
           # Verify
-          expect(Rails.configuration.active_record.query_log_tags).to include(
-            {
-              destination: ->(context) do
-                ActiveRecord::Base.connection_db_config.name
-              end,
-            }
-          )
+          expect(Rails.configuration.active_record.query_log_tags).to have_received(:<<).
+            with(expected_tag)
         end
       end
 
@@ -137,16 +128,11 @@ RSpec.describe Readyset::Railtie do
           allow(Rails).to receive(:env).and_return(rails_env)
           allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
             and_return(false)
+          allow(Rails.configuration.active_record.query_log_tags).to receive(:<<)
           Readyset::Railtie.setup_query_annotator
 
           # Verify
-          expect(Rails.configuration.active_record.query_log_tags).not_to include(
-            {
-              destination: ->(context) do
-                ActiveRecord::Base.connection_db_config.name
-              end,
-            }
-          )
+          expect(Rails.configuration.active_record.query_log_tags).not_to have_received(:<<)
         end
       end
     end
@@ -158,16 +144,11 @@ RSpec.describe Readyset::Railtie do
         allow(Rails).to receive(:env).and_return(rails_env)
         allow(Rails.configuration.active_record).to receive(:query_log_tags_enabled).
           and_return(true)
+        allow(Rails.configuration.active_record.query_log_tags).to receive(:<<)
         Readyset::Railtie.setup_query_annotator
 
         # Verify
-        expect(Rails.configuration.active_record.query_log_tags).not_to include(
-          {
-            destination: ->(context) do
-              ActiveRecord::Base.connection_db_config.name
-            end,
-          }
-        )
+        expect(Rails.configuration.active_record.query_log_tags).not_to have_received(:<<)
       end
     end
   end
