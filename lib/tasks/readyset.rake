@@ -113,6 +113,7 @@ namespace :readyset do
         creating = 'creating'.green
         print "#{dropping} #{to_drop.size} caches and #{creating} #{to_create.size} caches. " \
           'Continue? (y/n) '
+        $stdout.flush
         y_or_n = STDIN.gets.strip
 
         if y_or_n == 'y'
