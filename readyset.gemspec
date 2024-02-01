@@ -7,6 +7,7 @@ Gem::Specification.new do |spec|
   spec.version = Readyset::VERSION
   spec.authors = ['ReadySet Technology, Inc.']
   spec.email = ['info@readyset.io']
+  spec.licenses = ['MIT']
 
   spec.summary = 'A Rails adapter for ReadySet, a partially-stateful, incrementally-maintained ' \
                  'SQL cache.'
@@ -31,9 +32,9 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'actionpack', '>= 6.1'
-  spec.add_dependency 'activerecord', '>= 6.1'
-  spec.add_dependency 'activesupport', '>= 6.1'
+  spec.add_dependency 'actionpack', ['>= 6.1', '<= 7.1']
+  spec.add_dependency 'activerecord', ['>= 6.1', '<= 7.1']
+  spec.add_dependency 'activesupport', ['>= 6.1', '<= 7.1']
   spec.add_dependency 'colorize', '~> 1.1'
   spec.add_dependency 'concurrent-ruby', '~> 1.2'
   spec.add_dependency 'progressbar', '~> 1.13'
@@ -43,9 +44,9 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'combustion', '~> 1.3'
   spec.add_development_dependency 'factory_bot', '~> 6.4'
   spec.add_development_dependency 'pg', '~> 1.5'
-  spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'pry', '~> 0.14'
   spec.add_development_dependency 'rspec', '~> 3.2'
   spec.add_development_dependency 'rspec-rails', '~> 6.0'
-  spec.add_development_dependency 'rubocop-airbnb'
+  spec.add_development_dependency 'rubocop-airbnb', '~> 6.0'
   spec.add_development_dependency 'timecop', '~> 0.9'
 end
